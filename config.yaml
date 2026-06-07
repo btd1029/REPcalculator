@@ -6,28 +6,42 @@ search:
   price_max_man: 8000          # 万円
   area_min_m2: 40
 
+# ハードフィルター（falseの物件は集計対象から除外）
+hard_filters:
+  pet_allowed: true
+
 weights:
-  # 各因子の重み（合計1.0になるよう正規化される）
-  walk_to_station: 0.20        # 駅徒歩分数（少ない→高得点）
-  age_years: 0.15              # 築年数（新しい→高得点）
-  area_m2: 0.15                # 専有面積（大きい→高得点）
-  floor_level: 0.05            # 階数（高い→高得点）
-  direction: 0.05              # 向き（南→高得点）
-  supermarket_dist_m: 0.10     # スーパー距離（近い→高得点）
-  hospital_dist_m: 0.05        # 病院距離（近い→高得点）
-  school_dist_m: 0.05          # 小学校距離（近い→高得点）
-  management_score: 0.10       # 管理状況（手入力 0-10）
-  common_area_score: 0.05      # 共用部グレード（手入力 0-10）
-  view_score: 0.05             # 眺望（手入力 0-10）
+  # 合計が1.0でなくても自動正規化される
+  area_m2: 0.35
+  walk_to_station: 0.10
+  terminal_access: 0.10        # ターミナル駅への直線距離平均
+  supermarket_dist_m: 0.135
+  hospital_dist_m: 0.085
+  school_dist_m: 0.05
+  age_years: 0.08
+  floor_level: 0.05
+  direction: 0.05
+  renovation: 0.05             # リノベ済み（boolean）
+  delivery_box: 0.03           # 宅配ボックス（boolean）
+  bathroom_dryer: 0.02         # 浴室乾燥機（boolean）
+  walk_in_closet: 0.02         # ウォークインクローゼット（boolean）
 
 normalization:
-  walk_to_station:  {min: 1,    max: 20}
-  age_years:        {min: 0,    max: 40}
-  area_m2:          {min: 20,   max: 120}
-  floor_level:      {min: 1,    max: 30}
-  supermarket_dist_m: {min: 50, max: 1000}
-  hospital_dist_m:    {min: 50, max: 2000}
-  school_dist_m:      {min: 50, max: 1500}
+  walk_to_station:      {min: 1,    max: 15}
+  area_m2:              {min: 20,   max: 120}
+  floor_level:          {min: 1,    max: 30}
+  supermarket_dist_m:   {min: 50,   max: 1000}
+  hospital_dist_m:      {min: 50,   max: 2000}
+  school_dist_m:        {min: 50,   max: 1500}
+  terminal_access:      {min: 1000, max: 15000}  # 直線距離（m）
+
+# 築年数ステップスコア（線形正規化ではなく段階評価）
+age_step_scores:
+  - {max_years: 10,  score: 1.00}   # 〜10年：新築同様
+  - {max_years: 20,  score: 0.75}   # 11〜20年
+  - {max_years: 30,  score: 0.50}   # 21〜30年
+  - {max_years: 44,  score: 0.25}   # 31〜44年（新耐震基準内）
+  - {max_years: 999, score: 0.00}   # 45年超（旧耐震基準）
 
 direction_score:
   南:   1.0
@@ -39,14 +53,22 @@ direction_score:
   北西: 0.4
   北:   0.3
 
+# ターミナル駅リスト（エリアに合わせて編集）
+# 例: 東京都心
+terminal_stations:
+  - {name: "渋谷",  lat: 35.6580, lng: 139.7016}
+  - {name: "新宿",  lat: 35.6896, lng: 139.7006}
+  - {name: "銀座",  lat: 35.6717, lng: 139.7650}
+  - {name: "池袋",  lat: 35.7295, lng: 139.7109}
+  - {name: "東京",  lat: 35.6812, lng: 139.7671}
+  - {name: "品川",  lat: 35.6284, lng: 139.7387}
+
 mlit:
-  # 国土交通省 不動産取引価格情報API
   base_url: "https://www.land.mlit.go.jp/webland/api/TradeListSearch"
-  trade_type: "01"             # 01=中古マンション
-  recent_years: 2              # 直近N年の取引事例を使用
+  trade_type: "01"
+  recent_years: 2
 
 google_maps:
-  # Google Maps Places API キー（環境変数 GMAPS_API_KEY でも可）
   api_key: ""
 
 output:
