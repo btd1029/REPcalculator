@@ -101,15 +101,17 @@ python enrichers/gmaps.py properties/*.yaml
 
 各YAMLの `supermarket_dist_m` / `hospital_dist_m` / `school_dist_m` が埋まる。
 
-### 4. 内見後に手入力スコアを記入
+### 4. 設備情報を確認・補完
 
-`properties/<ID>.yaml` を開き、以下を 0〜10 で記入：
+`properties/<ID>.yaml` を開き、スクレイピングで取得できなかった設備フィールドを手入力：
 
 ```yaml
-management_score: 8    # 管理状況
-common_area_score: 7   # 共用部グレード
-view_score: 6          # 眺望
-memo: "南向き・角部屋。管理人常駐"
+pet_allowed: true        # ペット可（必須項目）
+renovation: false        # リノベ済み
+delivery_box: true       # 宅配ボックス
+bathroom_dryer: true     # 浴室乾燥機
+walk_in_closet: false    # ウォークインクローゼット
+memo: "南向き・角部屋"
 ```
 
 ### 5. コスパランキングをCSV出力
@@ -133,13 +135,18 @@ python scorer.py
 
 ```yaml
 weights:
-  walk_to_station: 0.20   # 駅距離を重視するなら増やす
-  management_score: 0.10
+  area_m2: 0.35            # 面積を最重視するなら増やす
+  terminal_access: 0.10    # ターミナル駅アクセスの重み
+  walk_to_station: 0.10
   ...
 
 normalization:
-  walk_to_station: {min: 1, max: 20}  # 1分〜20分を0〜1にマッピング
-  area_m2:         {min: 20, max: 120}
+  walk_to_station: {min: 1, max: 15}   # 1〜15分を0〜1にマッピング
+  terminal_access: {min: 1000, max: 15000}  # 直線距離（m）
+
+terminal_stations:
+  - {name: "梅田", lat: 34.7024, lng: 135.4959}  # 大阪向けに差し替え例
+  - {name: "難波", lat: 34.6686, lng: 135.5013}
 ```
 
 重みの合計が1.0でなくても自動で正規化されるため、値の比率だけ意識すればよい。
