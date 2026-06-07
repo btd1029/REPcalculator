@@ -79,7 +79,7 @@ def enrich_property_file(yaml_path: str, api_key: Optional[str] = None) -> dict:
     for field, place_type in [
         ("supermarket_dist_m", "supermarket"),
         ("hospital_dist_m", "hospital"),
-        ("school_dist_m", "primary_school"),
+        ("convenience_store_dist_m", "convenience_store"),
     ]:
         dist = nearest_place_dist(lat, lng, place_type, key)
         prop[field] = dist

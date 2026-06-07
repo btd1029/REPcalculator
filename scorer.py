@@ -86,7 +86,7 @@ def score_property(prop: dict, config: dict) -> dict:
     scores["floor_level"] = n("floor_level")
     scores["supermarket_dist_m"] = n("supermarket_dist_m", invert=True)
     scores["hospital_dist_m"] = n("hospital_dist_m", invert=True)
-    scores["school_dist_m"] = n("school_dist_m", invert=True)
+    scores["convenience_store_dist_m"] = n("convenience_store_dist_m", invert=True)
 
     # ターミナル駅アクセス（全駅直線距離の平均）
     scores["terminal_access"] = _terminal_access_score(prop, terminals, norm_cfg)

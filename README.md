@@ -25,7 +25,7 @@ Score = Σ( w_i × normalize(f_i) )   # 重み付き合計（0〜1）
 | ターミナル駅アクセス | 緯度経度から直線距離計算 | 0.10 |
 | 病院距離 | Google Maps Places API | 0.085 |
 | 築年数 | SUUMO スクレイピング | 0.08 |
-| 小学校距離 | Google Maps Places API | 0.05 |
+| コンビニ距離 | Google Maps Places API | 0.05 |
 | 階数 | SUUMO スクレイピング | 0.05 |
 | 向き | SUUMO スクレイピング | 0.05 |
 | リノベ済み | SUUMO スクレイピング | 0.05 |
@@ -99,7 +99,7 @@ python scrapers/mlit.py properties/*.yaml
 python enrichers/gmaps.py properties/*.yaml
 ```
 
-各YAMLの `supermarket_dist_m` / `hospital_dist_m` / `school_dist_m` が埋まる。
+各YAMLの `supermarket_dist_m` / `hospital_dist_m` / `convenience_store_dist_m` が埋まる。
 
 ### 4. 設備情報を確認・補完
 

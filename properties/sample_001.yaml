@@ -18,7 +18,7 @@ lng: 139.7016
 # 生活利便性（enrichers/gmaps.py が埋める）
 supermarket_dist_m: null
 hospital_dist_m: null
-school_dist_m: null
+convenience_store_dist_m: null
 
 # 周辺取引事例から算出した理論価格（scrapers/mlit.py が埋める）
 theoretical_price_man: null

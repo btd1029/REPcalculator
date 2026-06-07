@@ -96,11 +96,8 @@ def _parse_card(card) -> Optional[dict]:
         "lng": None,
         "supermarket_dist_m": None,
         "hospital_dist_m": None,
-        "school_dist_m": None,
+        "convenience_store_dist_m": None,
         "theoretical_price_man": None,
-        "management_score": None,
-        "common_area_score": None,
-        "view_score": None,
         "memo": "",
     }
 

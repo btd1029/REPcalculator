@@ -17,7 +17,7 @@ weights:
   terminal_access: 0.10        # ターミナル駅への直線距離平均
   supermarket_dist_m: 0.135
   hospital_dist_m: 0.085
-  school_dist_m: 0.05
+  convenience_store_dist_m: 0.05
   age_years: 0.08
   floor_level: 0.05
   direction: 0.05
@@ -32,7 +32,7 @@ normalization:
   floor_level:          {min: 1,    max: 30}
   supermarket_dist_m:   {min: 50,   max: 1000}
   hospital_dist_m:      {min: 50,   max: 2000}
-  school_dist_m:        {min: 50,   max: 1500}
+  convenience_store_dist_m: {min: 50, max: 500}
   terminal_access:      {min: 1000, max: 15000}  # 直線距離（m）
 
 # 築年数ステップスコア（線形正規化ではなく段階評価）
