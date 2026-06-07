@@ -1,0 +1,53 @@
+# 検索・スコアリング設定
+
+search:
+  area: "東京都"
+  station_max_walk_min: 15
+  price_max_man: 8000          # 万円
+  area_min_m2: 40
+
+weights:
+  # 各因子の重み（合計1.0になるよう正規化される）
+  walk_to_station: 0.20        # 駅徒歩分数（少ない→高得点）
+  age_years: 0.15              # 築年数（新しい→高得点）
+  area_m2: 0.15                # 専有面積（大きい→高得点）
+  floor_level: 0.05            # 階数（高い→高得点）
+  direction: 0.05              # 向き（南→高得点）
+  supermarket_dist_m: 0.10     # スーパー距離（近い→高得点）
+  hospital_dist_m: 0.05        # 病院距離（近い→高得点）
+  school_dist_m: 0.05          # 小学校距離（近い→高得点）
+  management_score: 0.10       # 管理状況（手入力 0-10）
+  common_area_score: 0.05      # 共用部グレード（手入力 0-10）
+  view_score: 0.05             # 眺望（手入力 0-10）
+
+normalization:
+  walk_to_station:  {min: 1,    max: 20}
+  age_years:        {min: 0,    max: 40}
+  area_m2:          {min: 20,   max: 120}
+  floor_level:      {min: 1,    max: 30}
+  supermarket_dist_m: {min: 50, max: 1000}
+  hospital_dist_m:    {min: 50, max: 2000}
+  school_dist_m:      {min: 50, max: 1500}
+
+direction_score:
+  南:   1.0
+  南東: 0.9
+  南西: 0.9
+  東:   0.7
+  西:   0.6
+  北東: 0.4
+  北西: 0.4
+  北:   0.3
+
+mlit:
+  # 国土交通省 不動産取引価格情報API
+  base_url: "https://www.land.mlit.go.jp/webland/api/TradeListSearch"
+  trade_type: "01"             # 01=中古マンション
+  recent_years: 2              # 直近N年の取引事例を使用
+
+google_maps:
+  # Google Maps Places API キー（環境変数 GMAPS_API_KEY でも可）
+  api_key: ""
+
+output:
+  csv_path: "output/result.csv"

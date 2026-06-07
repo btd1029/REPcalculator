@@ -1,0 +1,31 @@
+# 物件サンプル（自動取得 + 手入力の混在例）
+id: sample_001
+name: "サンプルマンション301"
+source_url: "https://suumo.jp/ms/chuko/tokyo/..."
+
+# --- 自動取得フィールド ---
+price_man: 5800              # 万円（売値）
+area_m2: 65.5
+age_years: 12
+floor_level: 8
+total_floors: 14
+direction: "南"
+walk_to_station: 7           # 分
+station_name: "渋谷"
+address: "東京都渋谷区..."
+lat: 35.6580
+lng: 139.7016
+
+# 生活利便性（enrichers/gmaps.py が埋める）
+supermarket_dist_m: null
+hospital_dist_m: null
+school_dist_m: null
+
+# 周辺取引事例から算出した理論価格（scrapers/mlit.py が埋める）
+theoretical_price_man: null
+
+# --- 手入力フィールド（内見後に記入）---
+management_score: null       # 0-10
+common_area_score: null      # 0-10
+view_score: null             # 0-10
+memo: ""
