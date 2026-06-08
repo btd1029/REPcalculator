@@ -92,11 +92,12 @@
   <div class="card">
     <h2>物件スクリーンショット</h2>
     <div id="drop-zone">
-      <input type="file" id="file-input" accept="image/*">
-      <div id="drop-label">ここにドロップ、クリック、またはCtrl+Vで貼り付け</div>
+      <input type="file" id="file-input" accept="image/*,application/pdf">
+      <div id="drop-label">ここにドロップ、クリック、またはCtrl+Vで貼り付け<br><span style="font-size:0.78rem;color:#9ca3af">画像（PNG/JPG/WebP）またはPDF</span></div>
     </div>
     <div id="preview-wrap">
       <img id="preview-img" src="" alt="プレビュー">
+      <div id="pdf-label" style="display:none;margin-top:8px;font-size:0.85rem;color:#6b7280;"></div>
     </div>
     <div style="margin-top:14px;">
       <button class="btn btn-primary" id="btn-extract" disabled>画像から抽出する</button>
@@ -184,29 +185,52 @@ document.getElementById('btn-save-settings').addEventListener('click', function(
 });
 loadSettings();
 
-// ---- Image handling ----
+// ---- File handling (image or PDF) ----
 var currentBase64 = null;
 var currentMime = null;
+var currentFileType = null; // 'image' or 'pdf'
 
-function setImage(file) {
-  if (!file || !file.type.startsWith('image/')) return;
-  currentMime = file.type;
+function setFile(file) {
+  if (!file) return;
+  var isImage = file.type.startsWith('image/');
+  var isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (!isImage && !isPdf) return;
+
+  currentMime = isImage ? file.type : 'application/pdf';
+  currentFileType = isImage ? 'image' : 'pdf';
+
   var reader = new FileReader();
   reader.onload = function(e) {
     var dataUrl = e.target.result;
-    document.getElementById('preview-img').src = dataUrl;
-    document.getElementById('preview-wrap').style.display = 'block';
     currentBase64 = dataUrl.split(',')[1];
     document.getElementById('btn-extract').disabled = false;
     document.getElementById('drop-label').textContent = file.name;
+
+    var previewWrap = document.getElementById('preview-wrap');
+    var previewImg = document.getElementById('preview-img');
+    var pdfLabel = document.getElementById('pdf-label');
+    previewWrap.style.display = 'block';
+
+    if (isImage) {
+      previewImg.src = dataUrl;
+      previewImg.style.display = 'block';
+      pdfLabel.style.display = 'none';
+    } else {
+      previewImg.style.display = 'none';
+      pdfLabel.style.display = 'block';
+      pdfLabel.textContent = '📄 ' + file.name + '（' + (file.size / 1024).toFixed(0) + ' KB）';
+    }
   };
   reader.readAsDataURL(file);
 }
 
+// keep backward compat alias
+function setImage(file) { setFile(file); }
+
 var dropZone = document.getElementById('drop-zone');
 var fileInput = document.getElementById('file-input');
 
-fileInput.addEventListener('change', function() { if (fileInput.files[0]) setImage(fileInput.files[0]); });
+fileInput.addEventListener('change', function() { if (fileInput.files[0]) setFile(fileInput.files[0]); });
 
 dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
@@ -219,7 +243,9 @@ window.addEventListener('paste', function(e) {
   var items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
   for (var i = 0; i < items.length; i++) {
-    if (items[i].type.startsWith('image/')) { setImage(items[i].getAsFile()); break; }
+    if (items[i].type.startsWith('image/') || items[i].type === 'application/pdf') {
+      setFile(items[i].getAsFile()); break;
+    }
   }
 });
 
@@ -249,13 +275,12 @@ document.getElementById('btn-extract').addEventListener('click', async function(
         messages: [{
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: currentMime, data: currentBase64 }
-            },
+            currentFileType === 'pdf'
+              ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: currentBase64 } }
+              : { type: 'image',    source: { type: 'base64', media_type: currentMime,        data: currentBase64 } },
             {
               type: 'text',
-              text: '以下のSUUMO物件スクリーンショットから情報をJSONで抽出してください。\n不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。\n\n{"name":"物件名","price_man":数値,"area_m2":数値,"age_years":数値,"floor_level":数値,"total_floors":数値,"direction":"南/南東/南西/東/西/北東/北西/北","walk_to_station":数値,"station_name":"駅名","address":"住所","source_url":null,"pet_allowed":bool,"renovation":bool,"delivery_box":bool,"bathroom_dryer":bool,"walk_in_closet":bool,"auto_lock":bool,"parking":bool,"bike_parking":bool,"floor_heating":bool,"system_kitchen":bool,"dishwasher":bool,"monitor_intercom":bool,"security_camera":bool,"new_earthquake_standard":bool,"corner_unit":bool,"top_floor":bool}\n\nJSONのみ返してください。'
+              text: '以下のSUUMO物件情報（スクリーンショットまたはPDF）から情報をJSONで抽出してください。\n不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。\n\n{"name":"物件名","price_man":数値,"area_m2":数値,"age_years":数値,"floor_level":数値,"total_floors":数値,"direction":"南/南東/南西/東/西/北東/北西/北","walk_to_station":数値,"station_name":"駅名","address":"住所","source_url":null,"pet_allowed":bool,"renovation":bool,"delivery_box":bool,"bathroom_dryer":bool,"walk_in_closet":bool,"auto_lock":bool,"parking":bool,"bike_parking":bool,"floor_heating":bool,"system_kitchen":bool,"dishwasher":bool,"monitor_intercom":bool,"security_camera":bool,"new_earthquake_standard":bool,"corner_unit":bool,"top_floor":bool}\n\nJSONのみ返してください。'
             }
           ]
         }]
