@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'properties/**'
+  workflow_dispatch:
 
 jobs:
   render:
