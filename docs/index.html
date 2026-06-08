@@ -1,692 +1,395 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>物件登録 - REPcalculator</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f7fa;
-      color: #222;
-      margin: 0;
-      padding: 16px;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px 16px;
-    }
-    h1 { color: #1a73e8; font-size: 1.5rem; margin-bottom: 4px; }
-    .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 20px; }
-    section { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    section h2 { font-size: 1rem; color: #333; margin: 0 0 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-    section h2 .toggle { font-size: 0.8rem; color: #1a73e8; }
-    .collapsible-content { }
-    .collapsible-content.hidden { display: none; }
-    label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 4px; margin-top: 10px; }
-    label:first-child { margin-top: 0; }
-    input[type="text"], input[type="password"], input[type="number"], textarea, select {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      color: #222;
-      background: #fafafa;
-    }
-    input:focus, textarea:focus, select:focus {
-      outline: none;
-      border-color: #1a73e8;
-      background: #fff;
-    }
-    textarea { resize: vertical; min-height: 60px; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 9px 18px;
-      border: none;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background 0.15s;
-    }
-    .btn-primary { background: #1a73e8; color: #fff; }
-    .btn-primary:hover { background: #1558b0; }
-    .btn-secondary { background: #e8f0fe; color: #1a73e8; }
-    .btn-secondary:hover { background: #d2e3fc; }
-    .btn-success { background: #34a853; color: #fff; }
-    .btn-success:hover { background: #2d8a47; }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .drop-zone {
-      border: 2px dashed #1a73e8;
-      border-radius: 8px;
-      padding: 40px 20px;
-      text-align: center;
-      color: #666;
-      cursor: pointer;
-      transition: background 0.15s;
-      position: relative;
-    }
-    .drop-zone:hover, .drop-zone.drag-over { background: #e8f0fe; }
-    .drop-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-    }
-    .drop-zone .icon { font-size: 2rem; margin-bottom: 8px; }
-    .preview-img { max-width: 100%; max-height: 300px; border-radius: 6px; margin-top: 12px; display: none; }
-    .spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255,255,255,0.4);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    .spinner-dark {
-      border-color: rgba(26,115,232,0.3);
-      border-top-color: #1a73e8;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    @media (max-width: 500px) { .field-row { grid-template-columns: 1fr; } }
-    .checkbox-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 6px;
-      margin-top: 8px;
-    }
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.85rem;
-      color: #444;
-      padding: 4px 6px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .checkbox-item:hover { background: #f0f0f0; }
-    .checkbox-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: #1a73e8; cursor: pointer; }
-    .alert {
-      padding: 10px 14px;
-      border-radius: 4px;
-      font-size: 0.87rem;
-      margin-top: 10px;
-    }
-    .alert-success { background: #e6f4ea; color: #1e6b3a; border: 1px solid #b7dfbb; }
-    .alert-error { background: #fce8e6; color: #a50e0e; border: 1px solid #f5c6c6; }
-    .alert-info { background: #e8f0fe; color: #174ea6; border: 1px solid #aecbfa; }
-    #confirmSection { display: none; }
-    #successMsg { display: none; }
-    .hard-filter-label { color: #d93025; font-weight: 500; }
-    .section-divider { font-size: 0.8rem; color: #999; margin: 12px 0 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物件スコアラー</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f3f4f6; font-family: 'Helvetica Neue', Arial, sans-serif; color: #1f2937; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #2563eb; }
+  h2 { font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 12px; }
+  .container { max-width: 640px; margin: 0 auto; padding: 16px; }
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 16px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  #settings-toggle { background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; cursor: pointer; color: #6b7280; }
+  #settings-toggle:hover { background: #f9fafb; }
+  #settings-body { margin-top: 12px; }
+  #settings-body.hidden { display: none; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 0.82rem; font-weight: 500; color: #374151; margin-bottom: 4px; }
+  .field input, .field select, .field textarea {
+    width: 100%; border: 1px solid #d1d5db; border-radius: 6px;
+    padding: 8px 10px; font-size: 0.9rem; color: #1f2937; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #2563eb; }
+  .btn { display: inline-block; padding: 9px 20px; border-radius: 7px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+  .btn-save { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+  .btn-save:hover { background: #e5e7eb; }
+  #drop-zone {
+    border: 2px dashed #93c5fd; border-radius: 10px; padding: 36px 20px;
+    text-align: center; cursor: pointer; color: #6b7280; font-size: 0.9rem;
+    transition: background 0.15s, border-color 0.15s; position: relative;
+  }
+  #drop-zone:hover, #drop-zone.dragover { background: #eff6ff; border-color: #2563eb; }
+  #drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  #preview-wrap { margin-top: 14px; text-align: center; display: none; }
+  #preview-wrap img { max-width: 100%; max-height: 220px; border-radius: 8px; border: 1px solid #e5e7eb; }
+  .spinner {
+    display: inline-block; width: 20px; height: 20px;
+    border: 3px solid #bfdbfe; border-top-color: #2563eb;
+    border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #extract-status { font-size: 0.85rem; color: #6b7280; margin-top: 8px; min-height: 20px; }
+  #confirm-section { display: none; }
+  .section-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin: 16px 0 10px; }
+  .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .checkbox-item { display: flex; align-items: flex-start; gap: 7px; font-size: 0.88rem; cursor: pointer; }
+  .checkbox-item input[type=checkbox] { margin-top: 2px; accent-color: #2563eb; flex-shrink: 0; }
+  .hard-filter { color: #dc2626; font-weight: 600; }
+  .banner { border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 0.88rem; line-height: 1.5; display: none; }
+  .banner.success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+  .banner.error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .banner a { color: inherit; text-decoration: underline; }
+  .fields-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  @media (max-width: 480px) { .fields-2col { grid-template-columns: 1fr; } .checkbox-grid { grid-template-columns: 1fr; } }
+</style>
 </head>
 <body>
-  <h1>🏠 物件登録</h1>
-  <p class="subtitle">SUUMOスクリーンショットから物件情報を抽出してGitHubに保存します。</p>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <h1>物件スコアラー</h1>
+      <button id="settings-toggle">&#9881; 設定</button>
+    </div>
+    <div id="settings-body" class="hidden">
+      <div class="field">
+        <label>Claude APIキー</label>
+        <input type="password" id="s-claude-key" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <div class="field">
+        <label>GitHub PAT</label>
+        <input type="password" id="s-gh-token" placeholder="ghp_..." autocomplete="off">
+      </div>
+      <div class="field">
+        <label>リポジトリ</label>
+        <input type="text" id="s-repo" value="btd1029/repcalculator">
+      </div>
+      <div class="field">
+        <label>ブランチ</label>
+        <input type="text" id="s-branch" value="claude/modest-brown-B9rEP">
+      </div>
+      <button class="btn btn-save" id="btn-save-settings">保存</button>
+    </div>
+  </div>
 
-  <!-- Settings Panel -->
-  <section id="settingsSection">
-    <h2 onclick="toggleSettings()">
-      ⚙️ 設定
-      <span class="toggle" id="settingsToggle">▲ 折りたたむ</span>
-    </h2>
-    <div class="collapsible-content" id="settingsContent">
-      <label>Claude API キー</label>
-      <input type="password" id="claudeApiKey" placeholder="sk-ant-..." autocomplete="off">
-      <label>GitHub Personal Access Token</label>
-      <input type="password" id="githubToken" placeholder="ghp_..." autocomplete="off">
-      <label>GitHub リポジトリ</label>
-      <input type="text" id="githubRepo" placeholder="btd1029/repcalculator" value="btd1029/repcalculator">
-      <label>GitHub ブランチ</label>
-      <input type="text" id="githubBranch" placeholder="claude/modest-brown-B9rEP" value="claude/modest-brown-B9rEP">
-      <div style="margin-top:12px">
-        <button class="btn btn-primary" onclick="saveSettings()">💾 保存</button>
-        <span id="settingsSaved" style="margin-left:10px;font-size:0.85rem;color:#34a853;display:none">保存しました</span>
-      </div>
-    </div>
-  </section>
+  <div class="banner" id="banner"></div>
 
-  <!-- Upload Area -->
-  <section>
-    <h2>📷 スクリーンショットをアップロード</h2>
-    <div class="drop-zone" id="dropZone">
-      <div class="icon">📂</div>
-      <div>ドラッグ&ドロップ または クリックして選択</div>
-      <div style="font-size:0.8rem;color:#999;margin-top:4px">Ctrl+V で貼り付けも可</div>
-      <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+  <div class="card">
+    <h2>物件スクリーンショット</h2>
+    <div id="drop-zone">
+      <input type="file" id="file-input" accept="image/*">
+      <div id="drop-label">ここにドロップ、クリック、またはCtrl+Vで貼り付け</div>
     </div>
-    <img id="previewImg" class="preview-img" alt="プレビュー">
-    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-      <button class="btn btn-primary" id="extractBtn" onclick="extractData()" disabled>
-        🔍 抽出
-      </button>
-      <span id="extractSpinner" style="display:none"><span class="spinner spinner-dark"></span> Claude が解析中...</span>
+    <div id="preview-wrap">
+      <img id="preview-img" src="" alt="プレビュー">
     </div>
-    <div id="extractError"></div>
-  </section>
+    <div style="margin-top:14px;">
+      <button class="btn btn-primary" id="btn-extract" disabled>画像から抽出する</button>
+      <div id="extract-status"></div>
+    </div>
+  </div>
 
-  <!-- Confirmation Form -->
-  <section id="confirmSection">
-    <h2>✏️ 確認・編集</h2>
-    <div class="field-row">
-      <div>
-        <label>物件名 *</label>
-        <input type="text" id="f_name" placeholder="例: パークホームズ渋谷">
-      </div>
-      <div>
-        <label>価格（万円）</label>
-        <input type="number" id="f_price_man" placeholder="例: 4500">
-      </div>
-    </div>
-    <div class="field-row">
-      <div>
-        <label>面積（㎡）</label>
-        <input type="number" id="f_area_m2" step="0.01" placeholder="例: 65.5">
-      </div>
-      <div>
-        <label>築年数</label>
-        <input type="number" id="f_age_years" placeholder="例: 10">
-      </div>
-    </div>
-    <div class="field-row">
-      <div>
-        <label>階数</label>
-        <input type="number" id="f_floor_level" placeholder="例: 5">
-      </div>
-      <div>
-        <label>総階数</label>
-        <input type="number" id="f_total_floors" placeholder="例: 12">
-      </div>
-    </div>
-    <div class="field-row">
-      <div>
-        <label>向き</label>
-        <select id="f_direction">
-          <option value="">未選択</option>
-          <option value="南">南</option>
-          <option value="南東">南東</option>
-          <option value="南西">南西</option>
-          <option value="東">東</option>
-          <option value="西">西</option>
-          <option value="北東">北東</option>
-          <option value="北西">北西</option>
-          <option value="北">北</option>
+  <div class="card" id="confirm-section">
+    <h2>確認・編集</h2>
+    <div class="section-title">基本情報</div>
+    <div class="field"><label>物件名 *</label><input type="text" id="f-name" required></div>
+    <div class="fields-2col">
+      <div class="field"><label>価格（万円）</label><input type="number" id="f-price_man"></div>
+      <div class="field"><label>面積（㎡）</label><input type="number" id="f-area_m2" step="0.1"></div>
+      <div class="field"><label>築年数</label><input type="number" id="f-age_years"></div>
+      <div class="field"><label>階数</label><input type="number" id="f-floor_level"></div>
+      <div class="field"><label>総階数</label><input type="number" id="f-total_floors"></div>
+      <div class="field">
+        <label>方角</label>
+        <select id="f-direction">
+          <option value="">-</option>
+          <option>南</option><option>南東</option><option>南西</option>
+          <option>東</option><option>西</option><option>北東</option><option>北西</option><option>北</option>
         </select>
       </div>
-      <div>
-        <label>駅徒歩（分）</label>
-        <input type="number" id="f_walk_to_station" placeholder="例: 7">
-      </div>
+      <div class="field"><label>駅徒歩（分）</label><input type="number" id="f-walk_to_station"></div>
+      <div class="field"><label>駅名</label><input type="text" id="f-station_name"></div>
     </div>
-    <div class="field-row">
-      <div>
-        <label>最寄り駅</label>
-        <input type="text" id="f_station_name" placeholder="例: 渋谷">
-      </div>
-      <div>
-        <label>住所</label>
-        <input type="text" id="f_address" placeholder="例: 東京都渋谷区...">
-      </div>
+    <div class="field"><label>住所</label><input type="text" id="f-address"></div>
+    <div class="fields-2col">
+      <div class="field"><label>緯度</label><input type="number" id="f-lat" step="0.0001"></div>
+      <div class="field"><label>経度</label><input type="number" id="f-lng" step="0.0001"></div>
     </div>
-    <div class="field-row">
-      <div>
-        <label>緯度 (lat)</label>
-        <input type="number" id="f_lat" step="any" placeholder="例: 35.6586">
-      </div>
-      <div>
-        <label>経度 (lng)</label>
-        <input type="number" id="f_lng" step="any" placeholder="例: 139.7015">
-      </div>
-    </div>
-    <label>物件URL (source_url)</label>
-    <input type="text" id="f_source_url" placeholder="https://suumo.jp/...">
+    <div class="field"><label>物件URL</label><input type="text" id="f-source_url"></div>
 
-    <div class="section-divider">SUUMO 設備条件</div>
+    <div class="section-title">設備（SUUMO条件）</div>
     <div class="checkbox-grid">
-      <label class="checkbox-item hard-filter-label">
-        <input type="checkbox" id="f_pet_allowed">
-        ペット可 ★ハードフィルター
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_renovation">
-        リノベ済み
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_delivery_box">
-        宅配ボックス
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_bathroom_dryer">
-        浴室乾燥機
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_walk_in_closet">
-        ウォークインクローゼット
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_auto_lock">
-        オートロック
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_parking">
-        駐車場
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_bike_parking">
-        駐輪場
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_floor_heating">
-        床暖房
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_system_kitchen">
-        システムキッチン
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_dishwasher">
-        食洗機
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_monitor_intercom">
-        モニター付インターホン
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_security_camera">
-        防犯カメラ
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_new_earthquake_standard">
-        新耐震基準
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_corner_unit">
-        角部屋
-      </label>
-      <label class="checkbox-item">
-        <input type="checkbox" id="f_top_floor">
-        最上階
-      </label>
+      <label class="checkbox-item hard-filter"><input type="checkbox" id="f-pet_allowed"> ペット可 ★（ハードフィルター・赤ラベル）</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-renovation"> リノベ済み</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-delivery_box"> 宅配ボックス</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-bathroom_dryer"> 浴室乾燥機</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-walk_in_closet"> ウォークインクローゼット</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-auto_lock"> オートロック</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-parking"> 駐車場</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-bike_parking"> 駐輪場</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-floor_heating"> 床暖房</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-system_kitchen"> システムキッチン</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-dishwasher"> 食洗機</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-monitor_intercom"> モニター付インターホン</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-security_camera"> 防犯カメラ</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-new_earthquake_standard"> 新耐震基準</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-corner_unit"> 角部屋</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-top_floor"> 最上階</label>
     </div>
 
-    <label style="margin-top:12px">メモ</label>
-    <textarea id="f_memo" rows="3" placeholder="気になる点や補足情報など"></textarea>
+    <div class="section-title">メモ</div>
+    <div class="field"><textarea id="f-memo" rows="3" placeholder="自由記述..."></textarea></div>
 
-    <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
-      <button class="btn btn-success" id="commitBtn" onclick="commitProperty()">
-        📤 確定・保存
-      </button>
-      <span id="commitSpinner" style="display:none"><span class="spinner spinner-dark"></span> GitHubに保存中...</span>
+    <div style="margin-top: 16px;">
+      <button class="btn btn-primary" id="btn-commit">確定・保存</button>
     </div>
-    <div id="commitError"></div>
-  </section>
+  </div>
+</div>
 
-  <!-- Success -->
-  <section id="successMsg">
-    <div class="alert alert-success" id="successContent"></div>
-  </section>
+<script>
+// ---- Settings ----
+function loadSettings() {
+  document.getElementById('s-claude-key').value = localStorage.getItem('claude-key') || '';
+  document.getElementById('s-gh-token').value = localStorage.getItem('gh-token') || '';
+  document.getElementById('s-repo').value = localStorage.getItem('repo') || 'btd1029/repcalculator';
+  document.getElementById('s-branch').value = localStorage.getItem('branch') || 'claude/modest-brown-B9rEP';
+}
+function getSetting(k, def) { return localStorage.getItem(k) || def || ''; }
 
-  <script>
-  // ─── State ───────────────────────────────────────────────────────────────
-  let uploadedImage = null; // { base64: string, mediaType: string }
+document.getElementById('settings-toggle').addEventListener('click', function() {
+  document.getElementById('settings-body').classList.toggle('hidden');
+});
+document.getElementById('btn-save-settings').addEventListener('click', function() {
+  localStorage.setItem('claude-key', document.getElementById('s-claude-key').value.trim());
+  localStorage.setItem('gh-token', document.getElementById('s-gh-token').value.trim());
+  localStorage.setItem('repo', document.getElementById('s-repo').value.trim());
+  localStorage.setItem('branch', document.getElementById('s-branch').value.trim());
+  document.getElementById('settings-body').classList.add('hidden');
+  showBanner('設定を保存しました', 'success', 2000);
+});
+loadSettings();
 
-  // ─── Settings ────────────────────────────────────────────────────────────
-  function loadSettings() {
-    const fields = ['claudeApiKey', 'githubToken', 'githubRepo', 'githubBranch'];
-    fields.forEach(id => {
-      const saved = localStorage.getItem('rep_' + id);
-      if (saved) document.getElementById(id).value = saved;
-    });
-  }
+// ---- Image handling ----
+var currentBase64 = null;
+var currentMime = null;
 
-  function saveSettings() {
-    const fields = ['claudeApiKey', 'githubToken', 'githubRepo', 'githubBranch'];
-    fields.forEach(id => {
-      localStorage.setItem('rep_' + id, document.getElementById(id).value.trim());
-    });
-    const msg = document.getElementById('settingsSaved');
-    msg.style.display = 'inline';
-    setTimeout(() => { msg.style.display = 'none'; }, 2000);
-  }
-
-  function getSetting(id) {
-    return document.getElementById(id).value.trim() || localStorage.getItem('rep_' + id) || '';
-  }
-
-  function toggleSettings() {
-    const content = document.getElementById('settingsContent');
-    const toggle = document.getElementById('settingsToggle');
-    const hidden = content.classList.toggle('hidden');
-    toggle.textContent = hidden ? '▼ 展開' : '▲ 折りたたむ';
-  }
-
-  // ─── Image Upload ─────────────────────────────────────────────────────────
-  function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (file) processImageFile(file);
-  }
-
-  function processImageFile(file) {
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target.result;
-      const base64 = dataUrl.split(',')[1];
-      const mediaType = file.type;
-      uploadedImage = { base64, mediaType };
-      const preview = document.getElementById('previewImg');
-      preview.src = dataUrl;
-      preview.style.display = 'block';
-      document.getElementById('extractBtn').disabled = false;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // Drag and drop
-  const dropZone = document.getElementById('dropZone');
-  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) processImageFile(file);
-  });
-
-  // Paste support
-  document.addEventListener('paste', (e) => {
-    const items = e.clipboardData && e.clipboardData.items;
-    if (!items) return;
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        processImageFile(item.getAsFile());
-        break;
-      }
-    }
-  });
-
-  // ─── Extraction ───────────────────────────────────────────────────────────
-  async function extractData() {
-    const apiKey = getSetting('claudeApiKey');
-    if (!apiKey) { showError('extractError', 'Claude APIキーを設定してください。'); return; }
-    if (!uploadedImage) { showError('extractError', '画像をアップロードしてください。'); return; }
-
-    const btn = document.getElementById('extractBtn');
-    const spinner = document.getElementById('extractSpinner');
-    btn.disabled = true;
-    spinner.style.display = 'inline-flex';
-    document.getElementById('extractError').innerHTML = '';
-
-    const prompt = `以下のSUUMO物件スクリーンショットから情報をJSONで抽出してください。
-不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。
-
-{
-  "name": "物件名",
-  "price_man": 数値（万円）,
-  "area_m2": 数値,
-  "age_years": 数値,
-  "floor_level": 数値,
-  "total_floors": 数値,
-  "direction": "南/南東/南西/東/西/北東/北西/北のいずれか",
-  "walk_to_station": 数値（分）,
-  "station_name": "駅名",
-  "address": "住所",
-  "source_url": null,
-  "pet_allowed": bool,
-  "renovation": bool,
-  "delivery_box": bool,
-  "bathroom_dryer": bool,
-  "walk_in_closet": bool,
-  "auto_lock": bool,
-  "parking": bool,
-  "bike_parking": bool,
-  "floor_heating": bool,
-  "system_kitchen": bool,
-  "dishwasher": bool,
-  "monitor_intercom": bool,
-  "security_camera": bool,
-  "new_earthquake_standard": bool,
-  "corner_unit": bool,
-  "top_floor": bool
+function setImage(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  currentMime = file.type;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    document.getElementById('preview-img').src = dataUrl;
+    document.getElementById('preview-wrap').style.display = 'block';
+    currentBase64 = dataUrl.split(',')[1];
+    document.getElementById('btn-extract').disabled = false;
+    document.getElementById('drop-label').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
 }
 
-JSONのみ返してください。`;
+var dropZone = document.getElementById('drop-zone');
+var fileInput = document.getElementById('file-input');
 
-    try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-opus-4-5',
-          max_tokens: 1024,
-          messages: [{
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: uploadedImage.mediaType,
-                  data: uploadedImage.base64
-                }
-              },
-              { type: 'text', text: prompt }
-            ]
-          }]
-        })
-      });
+fileInput.addEventListener('change', function() { if (fileInput.files[0]) setImage(fileInput.files[0]); });
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `HTTP ${response.status}`);
-      }
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  var f = e.dataTransfer.files[0]; if (f) setImage(f);
+});
 
-      const data = await response.json();
-      const text = data.content[0].text.trim();
-
-      // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('JSONが見つかりませんでした。');
-      const extracted = JSON.parse(jsonMatch[0]);
-
-      fillForm(extracted);
-      document.getElementById('confirmSection').style.display = 'block';
-      document.getElementById('confirmSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    } catch (err) {
-      showError('extractError', '抽出エラー: ' + err.message);
-    } finally {
-      btn.disabled = false;
-      spinner.style.display = 'none';
-    }
+window.addEventListener('paste', function(e) {
+  var items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type.startsWith('image/')) { setImage(items[i].getAsFile()); break; }
   }
+});
 
-  // ─── Form Fill ────────────────────────────────────────────────────────────
-  function fillForm(data) {
-    const textFields = ['name', 'price_man', 'area_m2', 'age_years', 'floor_level',
-      'total_floors', 'walk_to_station', 'station_name', 'address', 'lat', 'lng', 'source_url', 'memo'];
-    textFields.forEach(f => {
-      const el = document.getElementById('f_' + f);
-      if (el && data[f] != null) el.value = data[f];
+// ---- Extract ----
+document.getElementById('btn-extract').addEventListener('click', async function() {
+  var apiKey = getSetting('claude-key');
+  if (!apiKey) { showBanner('Claude APIキーを設定してください', 'error'); return; }
+  if (!currentBase64) { showBanner('画像を選択してください', 'error'); return; }
+
+  var btn = document.getElementById('btn-extract');
+  var status = document.getElementById('extract-status');
+  btn.disabled = true;
+  status.innerHTML = '<span class="spinner"></span>抽出中...';
+
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: currentMime, data: currentBase64 }
+            },
+            {
+              type: 'text',
+              text: '以下のSUUMO物件スクリーンショットから情報をJSONで抽出してください。\n不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。\n\n{"name":"物件名","price_man":数値,"area_m2":数値,"age_years":数値,"floor_level":数値,"total_floors":数値,"direction":"南/南東/南西/東/西/北東/北西/北","walk_to_station":数値,"station_name":"駅名","address":"住所","source_url":null,"pet_allowed":bool,"renovation":bool,"delivery_box":bool,"bathroom_dryer":bool,"walk_in_closet":bool,"auto_lock":bool,"parking":bool,"bike_parking":bool,"floor_heating":bool,"system_kitchen":bool,"dishwasher":bool,"monitor_intercom":bool,"security_camera":bool,"new_earthquake_standard":bool,"corner_unit":bool,"top_floor":bool}\n\nJSONのみ返してください。'
+            }
+          ]
+        }]
+      })
     });
 
-    const dirEl = document.getElementById('f_direction');
-    if (dirEl && data.direction) dirEl.value = data.direction;
+    if (!res.ok) {
+      var err = await res.json().catch(function() { return {}; });
+      throw new Error((err.error && err.error.message) || ('HTTP ' + res.status));
+    }
 
-    const boolFields = ['pet_allowed', 'renovation', 'delivery_box', 'bathroom_dryer',
-      'walk_in_closet', 'auto_lock', 'parking', 'bike_parking', 'floor_heating',
-      'system_kitchen', 'dishwasher', 'monitor_intercom', 'security_camera',
-      'new_earthquake_standard', 'corner_unit', 'top_floor'];
-    boolFields.forEach(f => {
-      const el = document.getElementById('f_' + f);
-      if (el && data[f] != null) el.checked = !!data[f];
+    var data = await res.json();
+    var text = data.content[0].text.trim();
+    text = text.replace(/^```[a-z]*\n?/i, '').replace(/```\s*$/, '').trim();
+    var parsed = JSON.parse(text);
+    populateForm(parsed);
+    document.getElementById('confirm-section').style.display = 'block';
+    document.getElementById('confirm-section').scrollIntoView({ behavior: 'smooth' });
+    status.innerHTML = '&#10003; 抽出完了';
+  } catch (e) {
+    status.innerHTML = '';
+    showBanner('抽出エラー: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---- Form ----
+var boolFields = ['pet_allowed','renovation','delivery_box','bathroom_dryer','walk_in_closet','auto_lock','parking','bike_parking','floor_heating','system_kitchen','dishwasher','monitor_intercom','security_camera','new_earthquake_standard','corner_unit','top_floor'];
+var textFields = ['name','station_name','address','source_url'];
+var numFields = ['price_man','area_m2','age_years','floor_level','total_floors','walk_to_station'];
+
+function populateForm(d) {
+  textFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
+  numFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
+  var dir = document.getElementById('f-direction');
+  if (dir && d.direction) dir.value = d.direction;
+  boolFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.checked = !!d[k]; });
+  ['lat','lng'].forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
+}
+
+function getFormData() {
+  var d = {};
+  textFields.forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el && el.value.trim() ? el.value.trim() : null; });
+  numFields.forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el && el.value !== '' ? parseFloat(el.value) : null; });
+  var dir = document.getElementById('f-direction');
+  d.direction = dir && dir.value ? dir.value : null;
+  boolFields.forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el ? el.checked : false; });
+  ['lat','lng'].forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el && el.value !== '' ? parseFloat(el.value) : null; });
+  d.memo = document.getElementById('f-memo').value.trim() || null;
+  return d;
+}
+
+// ---- YAML builder ----
+function toYaml(id, d) {
+  var allFields = ['name','price_man','area_m2','age_years','floor_level','total_floors','direction','walk_to_station','station_name','address','lat','lng','source_url'].concat(boolFields).concat(['memo']);
+  var lines = ['id: ' + id];
+  allFields.forEach(function(k) {
+    var v = d[k];
+    if (v === null || v === undefined) { lines.push(k + ': null'); }
+    else if (typeof v === 'boolean') { lines.push(k + ': ' + v); }
+    else if (typeof v === 'number') { lines.push(k + ': ' + v); }
+    else { lines.push(k + ': "' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'); }
+  });
+  return lines.join('\n') + '\n';
+}
+
+// ---- Commit ----
+document.getElementById('btn-commit').addEventListener('click', async function() {
+  var token = getSetting('gh-token');
+  var repo = getSetting('repo', 'btd1029/repcalculator');
+  var branch = getSetting('branch', 'claude/modest-brown-B9rEP');
+  if (!token) { showBanner('GitHub PATを設定してください', 'error'); return; }
+
+  var d = getFormData();
+  if (!d.name) { showBanner('物件名は必須です', 'error'); return; }
+
+  var id = btoa(d.name + Date.now()).replace(/[^a-z0-9]/gi,'').slice(0,8);
+  var yaml = toYaml(id, d);
+
+  // btoa for UTF-8
+  var content = btoa(unescape(encodeURIComponent(yaml)));
+  var path = 'properties/' + id + '.yaml';
+  var apiBase = 'https://api.github.com/repos/' + repo + '/contents/' + path;
+
+  var btn = document.getElementById('btn-commit');
+  btn.disabled = true;
+
+  try {
+    var sha = undefined;
+    var getRes = await fetch(apiBase + '?ref=' + encodeURIComponent(branch), {
+      headers: { Authorization: 'Bearer ' + token }
     });
-  }
+    if (getRes.ok) { var gd = await getRes.json(); sha = gd.sha; }
 
-  // ─── YAML Generation ──────────────────────────────────────────────────────
-  function yamlValue(v) {
-    if (v === null || v === undefined || v === '') return 'null';
-    if (typeof v === 'boolean') return v ? 'true' : 'false';
-    if (typeof v === 'number') return String(v);
-    // String: quote if contains special chars
-    if (/[:#\[\]{}&*!|>'"%@`\n]/.test(v) || v.trim() !== v) {
-      return '"' + v.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+    var body = { message: 'Add property: ' + d.name, content: content, branch: branch };
+    if (sha) body.sha = sha;
+
+    var putRes = await fetch(apiBase, {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!putRes.ok) {
+      var perr = await putRes.json().catch(function() { return {}; });
+      throw new Error(perr.message || ('HTTP ' + putRes.status));
     }
-    return v;
+
+    var parts = repo.split('/');
+    var owner = parts[0]; var reponame = parts[1];
+    var actionsUrl = 'https://github.com/' + repo + '/actions';
+    var rankingUrl = 'https://' + owner + '.github.io/' + reponame + '/ranking.html';
+    showBanner(
+      '保存しました！ ID: <b>' + id + '</b><br>' +
+      '<a href="' + actionsUrl + '" target="_blank">Actions を確認</a> ／ ' +
+      '<a href="' + rankingUrl + '" target="_blank">ランキングを見る</a>',
+      'success'
+    );
+  } catch (e) {
+    showBanner('コミットエラー: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
   }
+});
 
-  function buildYaml(fields) {
-    return Object.entries(fields)
-      .map(([k, v]) => `${k}: ${yamlValue(v)}`)
-      .join('\n') + '\n';
-  }
-
-  // Simple MD5-like hash using SubtleCrypto for property ID
-  async function hashId(str) {
-    const enc = new TextEncoder().encode(str);
-    const buf = await crypto.subtle.digest('SHA-256', enc);
-    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    return hex.slice(0, 8);
-  }
-
-  // ─── Commit ───────────────────────────────────────────────────────────────
-  async function commitProperty() {
-    const token = getSetting('githubToken');
-    const repo = getSetting('githubRepo');
-    const branch = getSetting('githubBranch');
-    if (!token) { showError('commitError', 'GitHub PATを設定してください。'); return; }
-    if (!repo) { showError('commitError', 'GitHubリポジトリを設定してください。'); return; }
-
-    const name = document.getElementById('f_name').value.trim();
-    if (!name) { showError('commitError', '物件名は必須です。'); return; }
-
-    const btn = document.getElementById('commitBtn');
-    const spinner = document.getElementById('commitSpinner');
-    btn.disabled = true;
-    spinner.style.display = 'inline-flex';
-    document.getElementById('commitError').innerHTML = '';
-
-    try {
-      const propId = await hashId(name + Date.now());
-
-      const getNum = id => { const v = document.getElementById(id).value; return v !== '' ? parseFloat(v) : null; };
-      const getStr = id => { const v = document.getElementById(id).value.trim(); return v || null; };
-      const getBool = id => document.getElementById(id).checked;
-
-      const fields = {
-        id: propId,
-        name: name,
-        price_man: getNum('f_price_man'),
-        area_m2: getNum('f_area_m2'),
-        age_years: getNum('f_age_years'),
-        floor_level: getNum('f_floor_level'),
-        total_floors: getNum('f_total_floors'),
-        direction: getStr('f_direction'),
-        walk_to_station: getNum('f_walk_to_station'),
-        station_name: getStr('f_station_name'),
-        address: getStr('f_address'),
-        lat: getNum('f_lat'),
-        lng: getNum('f_lng'),
-        source_url: getStr('f_source_url'),
-        pet_allowed: getBool('f_pet_allowed'),
-        renovation: getBool('f_renovation'),
-        delivery_box: getBool('f_delivery_box'),
-        bathroom_dryer: getBool('f_bathroom_dryer'),
-        walk_in_closet: getBool('f_walk_in_closet'),
-        auto_lock: getBool('f_auto_lock'),
-        parking: getBool('f_parking'),
-        bike_parking: getBool('f_bike_parking'),
-        floor_heating: getBool('f_floor_heating'),
-        system_kitchen: getBool('f_system_kitchen'),
-        dishwasher: getBool('f_dishwasher'),
-        monitor_intercom: getBool('f_monitor_intercom'),
-        security_camera: getBool('f_security_camera'),
-        new_earthquake_standard: getBool('f_new_earthquake_standard'),
-        corner_unit: getBool('f_corner_unit'),
-        top_floor: getBool('f_top_floor'),
-        memo: getStr('f_memo')
-      };
-
-      const yamlContent = buildYaml(fields);
-      const filePath = `properties/${propId}.yaml`;
-      const apiBase = `https://api.github.com/repos/${repo}/contents/${filePath}`;
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github+json'
-      };
-
-      // Check if file exists (get SHA)
-      let sha = null;
-      const existing = await fetch(apiBase + `?ref=${encodeURIComponent(branch)}`, { headers });
-      if (existing.ok) {
-        const existingData = await existing.json();
-        sha = existingData.sha;
-      }
-
-      const body = {
-        message: `feat: add property ${name} (${propId})`,
-        content: btoa(unescape(encodeURIComponent(yamlContent))),
-        branch: branch
-      };
-      if (sha) body.sha = sha;
-
-      const putResp = await fetch(apiBase, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(body)
-      });
-
-      if (!putResp.ok) {
-        const err = await putResp.json().catch(() => ({}));
-        throw new Error(err.message || `HTTP ${putResp.status}`);
-      }
-
-      const actionsUrl = `https://github.com/${repo}/actions`;
-      document.getElementById('confirmSection').style.display = 'none';
-      const successSection = document.getElementById('successMsg');
-      successSection.style.display = 'block';
-      document.getElementById('successContent').innerHTML =
-        `✅ <strong>${escHtml(name)}</strong> を <code>${filePath}</code> として保存しました。<br>` +
-        `GitHub Actionsがスコアを計算し、ランキングを更新します（約1分）。<br>` +
-        `<a href="${actionsUrl}" target="_blank">→ Actionsの進捗を確認</a>`;
-      successSection.scrollIntoView({ behavior: 'smooth' });
-
-    } catch (err) {
-      showError('commitError', '保存エラー: ' + err.message);
-    } finally {
-      btn.disabled = false;
-      spinner.style.display = 'none';
-    }
-  }
-
-  // ─── Utilities ────────────────────────────────────────────────────────────
-  function showError(containerId, msg) {
-    document.getElementById(containerId).innerHTML =
-      `<div class="alert alert-error">${escHtml(msg)}</div>`;
-  }
-
-  function escHtml(str) {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-              .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
-
-  // ─── Init ─────────────────────────────────────────────────────────────────
-  loadSettings();
-  </script>
+// ---- Banner ----
+function showBanner(msg, type, autoHide) {
+  var b = document.getElementById('banner');
+  b.innerHTML = msg;
+  b.className = 'banner ' + type;
+  b.style.display = 'block';
+  b.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (autoHide) setTimeout(function() { b.style.display = 'none'; }, autoHide);
+}
+</script>
 </body>
 </html>
