@@ -7,10 +7,14 @@
 
 import math
 import os
+from pathlib import Path
 from typing import Optional
 
 import requests
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 
 PLACES_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"

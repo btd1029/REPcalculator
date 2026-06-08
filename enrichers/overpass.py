@@ -11,6 +11,9 @@ from typing import Optional
 
 import requests
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
