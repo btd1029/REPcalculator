@@ -20,12 +20,12 @@ Score = Σ( w_i × normalize(f_i) )   # 重み付き合計（0〜1）
 | 因子 | 取得方法 | 重み |
 |------|----------|------|
 | 専有面積 | SUUMO スクレイピング | 0.35 |
-| スーパー距離 | Google Maps Places API | 0.135 |
+| スーパー距離 | Overpass API (OSM) | 0.135 |
 | 駅徒歩分数 | SUUMO スクレイピング | 0.10 |
 | ターミナル駅アクセス | 緯度経度から直線距離計算 | 0.10 |
-| 病院距離 | Google Maps Places API | 0.085 |
+| 病院距離 | Overpass API (OSM) | 0.085 |
 | 築年数 | SUUMO スクレイピング | 0.08 |
-| コンビニ距離 | Google Maps Places API | 0.05 |
+| コンビニ距離 | Overpass API (OSM) | 0.05 |
 | 階数 | SUUMO スクレイピング | 0.05 |
 | 向き | SUUMO スクレイピング | 0.05 |
 | リノベ済み | SUUMO スクレイピング | 0.05 |
@@ -52,7 +52,8 @@ estate-scorer/
 │   ├── suumo.py         # SUUMO スクレイピング
 │   └── mlit.py          # 国土交通省 取引価格情報API
 ├── enrichers/
-│   └── gmaps.py         # Google Maps Places API（施設距離）
+│   ├── overpass.py      # Overpass API/OSM（施設距離・無料）
+│   └── gmaps.py         # Overpass API (OSM)（施設距離・有料）
 ├── scorer.py            # スコア計算・コスパ比・乖離率
 ├── export.py            # CSV出力
 └── output/
@@ -67,11 +68,7 @@ estate-scorer/
 pip install -r requirements.txt
 ```
 
-Google Maps Places API を使う場合は API キーを環境変数に設定：
-
-```bash
-export GMAPS_API_KEY="your_api_key_here"
-```
+生活利便距離の取得には Overpass API（無料・認証不要）を使用。Google Maps APIキーは不要。
 
 ---
 
@@ -113,13 +110,13 @@ python scrapers/mlit.py properties/*.yaml
 
 各YAMLの `theoretical_price_man` が埋まる。
 
-### 3. 生活利便距離を取得（Google Maps）
+### 3. 生活利便距離を取得（Overpass API・無料）
 
 ```bash
-python enrichers/gmaps.py properties/*.yaml
+python enrichers/overpass.py properties/*.yaml
 ```
 
-各YAMLの `supermarket_dist_m` / `hospital_dist_m` / `convenience_store_dist_m` が埋まる。
+各YAMLの `supermarket_dist_m` / `hospital_dist_m` / `convenience_store_dist_m` が埋まる。認証不要・無料（1秒インターバル自動挿入済み）。
 
 ### 4. 設備情報を確認・補完
 
