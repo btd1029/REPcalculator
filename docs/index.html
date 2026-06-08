@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物件スコアラー</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f3f4f6; font-family: 'Helvetica Neue', Arial, sans-serif; color: #1f2937; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #2563eb; }
+  h2 { font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 12px; }
+  .container { max-width: 640px; margin: 0 auto; padding: 16px; }
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 16px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  #settings-toggle { background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; cursor: pointer; color: #6b7280; }
+  #settings-toggle:hover { background: #f9fafb; }
+  #settings-body { margin-top: 12px; }
+  #settings-body.hidden { display: none; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 0.82rem; font-weight: 500; color: #374151; margin-bottom: 4px; }
+  .field input, .field select, .field textarea {
+    width: 100%; border: 1px solid #d1d5db; border-radius: 6px;
+    padding: 8px 10px; font-size: 0.9rem; color: #1f2937; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #2563eb; }
+  .btn { display: inline-block; padding: 9px 20px; border-radius: 7px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+  .btn-save { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+  .btn-save:hover { background: #e5e7eb; }
+  #drop-zone {
+    border: 2px dashed #93c5fd; border-radius: 10px; padding: 36px 20px;
+    text-align: center; cursor: pointer; color: #6b7280; font-size: 0.9rem;
+    transition: background 0.15s, border-color 0.15s; position: relative;
+  }
+  #drop-zone:hover, #drop-zone.dragover { background: #eff6ff; border-color: #2563eb; }
+  #drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  #preview-wrap { margin-top: 14px; text-align: center; display: none; }
+  #preview-wrap img { max-width: 100%; max-height: 220px; border-radius: 8px; border: 1px solid #e5e7eb; }
+  .spinner {
+    display: inline-block; width: 20px; height: 20px;
+    border: 3px solid #bfdbfe; border-top-color: #2563eb;
+    border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #extract-status { font-size: 0.85rem; color: #6b7280; margin-top: 8px; min-height: 20px; }
+  #confirm-section { display: none; }
+  .section-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin: 16px 0 10px; }
+  .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .checkbox-item { display: flex; align-items: flex-start; gap: 7px; font-size: 0.88rem; cursor: pointer; }
+  .checkbox-item input[type=checkbox] { margin-top: 2px; accent-color: #2563eb; flex-shrink: 0; }
+  .hard-filter { color: #dc2626; font-weight: 600; }
+  .banner { border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 0.88rem; line-height: 1.5; display: none; }
+  .banner.success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+  .banner.error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .banner a { color: inherit; text-decoration: underline; }
+  .fields-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  @media (max-width: 480px) { .fields-2col { grid-template-columns: 1fr; } .checkbox-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <h1>物件スコアラー</h1>
+      <button id="settings-toggle">&#9881; 設定</button>
+    </div>
+    <div id="settings-body" class="hidden">
+      <div class="field">
+        <label>Claude APIキー</label>
+        <input type="password" id="s-claude-key" placeholder="sk-ant-..." autocomplete="off">
+      </div>
+      <div class="field">
+        <label>GitHub PAT</label>
+        <input type="password" id="s-gh-token" placeholder="ghp_..." autocomplete="off">
+      </div>
+      <div class="field">
+        <label>リポジトリ</label>
+        <input type="text" id="s-repo" value="btd1029/repcalculator">
+      </div>
+      <div class="field">
+        <label>ブランチ</label>
+        <input type="text" id="s-branch" value="claude/modest-brown-B9rEP">
+      </div>
+      <button class="btn btn-save" id="btn-save-settings">保存</button>
+    </div>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="card">
+    <h2>物件スクリーンショット</h2>
+    <div id="drop-zone">
+      <input type="file" id="file-input" accept="image/*,application/pdf">
+      <div id="drop-label">ここにドロップ、クリック、またはCtrl+Vで貼り付け<br><span style="font-size:0.78rem;color:#9ca3af">画像（PNG/JPG/WebP）またはPDF</span></div>
+    </div>
+    <div id="preview-wrap">
+      <img id="preview-img" src="" alt="プレビュー">
+      <div id="pdf-label" style="display:none;margin-top:8px;font-size:0.85rem;color:#6b7280;"></div>
+    </div>
+    <div style="margin-top:14px;">
+      <button class="btn btn-primary" id="btn-extract" disabled>画像から抽出する</button>
+      <div id="extract-status"></div>
+    </div>
+  </div>
+
+  <div class="card" id="confirm-section">
+    <h2>確認・編集</h2>
+    <div class="section-title">基本情報</div>
+    <div class="field"><label>物件名 *</label><input type="text" id="f-name" required></div>
+    <div class="fields-2col">
+      <div class="field"><label>価格（万円）</label><input type="number" id="f-price_man"></div>
+      <div class="field"><label>面積（㎡）</label><input type="number" id="f-area_m2" step="0.1"></div>
+      <div class="field"><label>築年数</label><input type="number" id="f-age_years"></div>
+      <div class="field"><label>階数</label><input type="number" id="f-floor_level"></div>
+      <div class="field"><label>総階数</label><input type="number" id="f-total_floors"></div>
+      <div class="field">
+        <label>方角</label>
+        <select id="f-direction">
+          <option value="">-</option>
+          <option>南</option><option>南東</option><option>南西</option>
+          <option>東</option><option>西</option><option>北東</option><option>北西</option><option>北</option>
+        </select>
+      </div>
+      <div class="field"><label>駅徒歩（分）</label><input type="number" id="f-walk_to_station"></div>
+      <div class="field"><label>駅名</label><input type="text" id="f-station_name"></div>
+    </div>
+    <div class="field"><label>住所</label><input type="text" id="f-address"></div>
+    <div class="fields-2col">
+      <div class="field"><label>緯度</label><input type="number" id="f-lat" step="0.0001"></div>
+      <div class="field"><label>経度</label><input type="number" id="f-lng" step="0.0001"></div>
+    </div>
+    <div class="field"><label>物件URL</label><input type="text" id="f-source_url"></div>
+
+    <div class="section-title">設備（SUUMO条件）</div>
+    <div class="checkbox-grid">
+      <label class="checkbox-item hard-filter"><input type="checkbox" id="f-pet_allowed"> ペット可 ★（ハードフィルター・赤ラベル）</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-renovation"> リノベ済み</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-delivery_box"> 宅配ボックス</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-bathroom_dryer"> 浴室乾燥機</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-walk_in_closet"> ウォークインクローゼット</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-auto_lock"> オートロック</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-parking"> 駐車場</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-bike_parking"> 駐輪場</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-floor_heating"> 床暖房</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-system_kitchen"> システムキッチン</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-dishwasher"> 食洗機</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-monitor_intercom"> モニター付インターホン</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-security_camera"> 防犯カメラ</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-new_earthquake_standard"> 新耐震基準</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-corner_unit"> 角部屋</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-top_floor"> 最上階</label>
+    </div>
+
+    <div class="section-title">メモ</div>
+    <div class="field"><textarea id="f-memo" rows="3" placeholder="自由記述..."></textarea></div>
+
+    <div style="margin-top: 16px;">
+      <button class="btn btn-primary" id="btn-commit">確定・保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Settings ----
+function loadSettings() {
+  document.getElementById('s-claude-key').value = localStorage.getItem('claude-key') || '';
+  document.getElementById('s-gh-token').value = localStorage.getItem('gh-token') || '';
+  document.getElementById('s-repo').value = localStorage.getItem('repo') || 'btd1029/repcalculator';
+  document.getElementById('s-branch').value = localStorage.getItem('branch') || 'claude/modest-brown-B9rEP';
+}
+function getSetting(k, def) { return localStorage.getItem(k) || def || ''; }
+
+document.getElementById('settings-toggle').addEventListener('click', function() {
+  document.getElementById('settings-body').classList.toggle('hidden');
+});
+document.getElementById('btn-save-settings').addEventListener('click', function() {
+  localStorage.setItem('claude-key', document.getElementById('s-claude-key').value.trim());
+  localStorage.setItem('gh-token', document.getElementById('s-gh-token').value.trim());
+  localStorage.setItem('repo', document.getElementById('s-repo').value.trim());
+  localStorage.setItem('branch', document.getElementById('s-branch').value.trim());
+  document.getElementById('settings-body').classList.add('hidden');
+  showBanner('設定を保存しました', 'success', 2000);
+});
+loadSettings();
+
+// ---- File handling (image or PDF) ----
+var currentBase64 = null;
+var currentMime = null;
+var currentFileType = null; // 'image' or 'pdf'
+
+function setFile(file) {
+  if (!file) return;
+  var isImage = file.type.startsWith('image/');
+  var isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (!isImage && !isPdf) return;
+
+  currentMime = isImage ? file.type : 'application/pdf';
+  currentFileType = isImage ? 'image' : 'pdf';
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    currentBase64 = dataUrl.split(',')[1];
+    document.getElementById('btn-extract').disabled = false;
+    document.getElementById('drop-label').textContent = file.name;
+
+    var previewWrap = document.getElementById('preview-wrap');
+    var previewImg = document.getElementById('preview-img');
+    var pdfLabel = document.getElementById('pdf-label');
+    previewWrap.style.display = 'block';
+
+    if (isImage) {
+      previewImg.src = dataUrl;
+      previewImg.style.display = 'block';
+      pdfLabel.style.display = 'none';
+    } else {
+      previewImg.style.display = 'none';
+      pdfLabel.style.display = 'block';
+      pdfLabel.textContent = '📄 ' + file.name + '（' + (file.size / 1024).toFixed(0) + ' KB）';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// keep backward compat alias
+function setImage(file) { setFile(file); }
+
+var dropZone = document.getElementById('drop-zone');
+var fileInput = document.getElementById('file-input');
+
+fileInput.addEventListener('change', function() { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  var f = e.dataTransfer.files[0]; if (f) setImage(f);
+});
+
+window.addEventListener('paste', function(e) {
+  var items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type.startsWith('image/') || items[i].type === 'application/pdf') {
+      setFile(items[i].getAsFile()); break;
+    }
+  }
+});
+
+// ---- Extract ----
+document.getElementById('btn-extract').addEventListener('click', async function() {
+  var apiKey = getSetting('claude-key');
+  if (!apiKey) { showBanner('Claude APIキーを設定してください', 'error'); return; }
+  if (!currentBase64) { showBanner('画像を選択してください', 'error'); return; }
+
+  var btn = document.getElementById('btn-extract');
+  var status = document.getElementById('extract-status');
+  btn.disabled = true;
+  status.innerHTML = '<span class="spinner"></span>抽出中...';
+
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [
+            currentFileType === 'pdf'
+              ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: currentBase64 } }
+              : { type: 'image',    source: { type: 'base64', media_type: currentMime,        data: currentBase64 } },
+            {
+              type: 'text',
+              text: '以下のSUUMO物件情報（スクリーンショットまたはPDF）から情報をJSONで抽出してください。\n不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。\n\n{"name":"物件名","price_man":数値,"area_m2":数値,"age_years":数値,"floor_level":数値,"total_floors":数値,"direction":"南/南東/南西/東/西/北東/北西/北","walk_to_station":数値,"station_name":"駅名","address":"住所","source_url":null,"pet_allowed":bool,"renovation":bool,"delivery_box":bool,"bathroom_dryer":bool,"walk_in_closet":bool,"auto_lock":bool,"parking":bool,"bike_parking":bool,"floor_heating":bool,"system_kitchen":bool,"dishwasher":bool,"monitor_intercom":bool,"security_camera":bool,"new_earthquake_standard":bool,"corner_unit":bool,"top_floor":bool}\n\nJSONのみ返してください。'
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      var err = await res.json().catch(function() { return {}; });
+      throw new Error((err.error && err.error.message) || ('HTTP ' + res.status));
+    }
+
+    var data = await res.json();
+    var text = data.content[0].text.trim();
+    text = text.replace(/^```[a-z]*\n?/i, '').replace(/```\s*$/, '').trim();
+    var parsed = JSON.parse(text);
+    populateForm(parsed);
+    document.getElementById('confirm-section').style.display = 'block';
+    document.getElementById('confirm-section').scrollIntoView({ behavior: 'smooth' });
+    status.innerHTML = '&#10003; 抽出完了';
+  } catch (e) {
+    status.innerHTML = '';
+    showBanner('抽出エラー: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---- Form ----
+var boolFields = ['pet_allowed','renovation','delivery_box','bathroom_dryer','walk_in_closet','auto_lock','parking','bike_parking','floor_heating','system_kitchen','dishwasher','monitor_intercom','security_camera','new_earthquake_standard','corner_unit','top_floor'];
+var textFields = ['name','station_name','address','source_url'];
+var numFields = ['price_man','area_m2','age_years','floor_level','total_floors','walk_to_station'];
+
+function populateForm(d) {
+  textFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
+  numFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
+  var dir = document.getElementById('f-direction');
+  if (dir && d.direction) dir.value = d.direction;
+  boolFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.checked = !!d[k]; });
+  ['lat','lng'].forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
+}
+
+function getFormData() {
+  var d = {};
+  textFields.forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el && el.value.trim() ? el.value.trim() : null; });
+  numFields.forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el && el.value !== '' ? parseFloat(el.value) : null; });
+  var dir = document.getElementById('f-direction');
+  d.direction = dir && dir.value ? dir.value : null;
+  boolFields.forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el ? el.checked : false; });
+  ['lat','lng'].forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el && el.value !== '' ? parseFloat(el.value) : null; });
+  d.memo = document.getElementById('f-memo').value.trim() || null;
+  return d;
+}
+
+// ---- YAML builder ----
+function toYaml(id, d) {
+  var allFields = ['name','price_man','area_m2','age_years','floor_level','total_floors','direction','walk_to_station','station_name','address','lat','lng','source_url'].concat(boolFields).concat(['memo']);
+  var lines = ['id: ' + id];
+  allFields.forEach(function(k) {
+    var v = d[k];
+    if (v === null || v === undefined) { lines.push(k + ': null'); }
+    else if (typeof v === 'boolean') { lines.push(k + ': ' + v); }
+    else if (typeof v === 'number') { lines.push(k + ': ' + v); }
+    else { lines.push(k + ': "' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'); }
+  });
+  return lines.join('\n') + '\n';
+}
+
+// ---- Commit ----
+document.getElementById('btn-commit').addEventListener('click', async function() {
+  var token = getSetting('gh-token');
+  var repo = getSetting('repo', 'btd1029/repcalculator');
+  var branch = getSetting('branch', 'claude/modest-brown-B9rEP');
+  if (!token) { showBanner('GitHub PATを設定してください', 'error'); return; }
+
+  var d = getFormData();
+  if (!d.name) { showBanner('物件名は必須です', 'error'); return; }
+
+  var id = btoa(d.name + Date.now()).replace(/[^a-z0-9]/gi,'').slice(0,8);
+  var yaml = toYaml(id, d);
+
+  // btoa for UTF-8
+  var content = btoa(unescape(encodeURIComponent(yaml)));
+  var path = 'properties/' + id + '.yaml';
+  var apiBase = 'https://api.github.com/repos/' + repo + '/contents/' + path;
+
+  var btn = document.getElementById('btn-commit');
+  btn.disabled = true;
+
+  try {
+    var sha = undefined;
+    var getRes = await fetch(apiBase + '?ref=' + encodeURIComponent(branch), {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (getRes.ok) { var gd = await getRes.json(); sha = gd.sha; }
+
+    var body = { message: 'Add property: ' + d.name, content: content, branch: branch };
+    if (sha) body.sha = sha;
+
+    var putRes = await fetch(apiBase, {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!putRes.ok) {
+      var perr = await putRes.json().catch(function() { return {}; });
+      throw new Error(perr.message || ('HTTP ' + putRes.status));
+    }
+
+    var parts = repo.split('/');
+    var owner = parts[0]; var reponame = parts[1];
+    var actionsUrl = 'https://github.com/' + repo + '/actions';
+    var rankingUrl = 'https://' + owner + '.github.io/' + reponame + '/ranking.html';
+    showBanner(
+      '保存しました！ ID: <b>' + id + '</b><br>' +
+      '<a href="' + actionsUrl + '" target="_blank">Actions を確認</a> ／ ' +
+      '<a href="' + rankingUrl + '" target="_blank">ランキングを見る</a>',
+      'success'
+    );
+  } catch (e) {
+    showBanner('コミットエラー: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---- Banner ----
+function showBanner(msg, type, autoHide) {
+  var b = document.getElementById('banner');
+  b.innerHTML = msg;
+  b.className = 'banner ' + type;
+  b.style.display = 'block';
+  b.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (autoHide) setTimeout(function() { b.style.display = 'none'; }, autoHide);
+}
+</script>
+</body>
+</html>

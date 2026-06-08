@@ -7,10 +7,14 @@
 
 import math
 import os
+from pathlib import Path
 from typing import Optional
 
 import requests
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 
 PLACES_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
@@ -79,7 +83,7 @@ def enrich_property_file(yaml_path: str, api_key: Optional[str] = None) -> dict:
     for field, place_type in [
         ("supermarket_dist_m", "supermarket"),
         ("hospital_dist_m", "hospital"),
-        ("school_dist_m", "primary_school"),
+        ("convenience_store_dist_m", "convenience_store"),
     ]:
         dist = nearest_place_dist(lat, lng, place_type, key)
         prop[field] = dist
