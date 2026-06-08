@@ -138,6 +138,7 @@
       <div class="field"><label>緯度</label><input type="number" id="f-lat" step="0.0001"></div>
       <div class="field"><label>経度</label><input type="number" id="f-lng" step="0.0001"></div>
     </div>
+    <div id="dist-status" style="font-size:0.8rem;color:#6b7280;margin-top:4px;min-height:16px;"></div>
     <div class="field"><label>物件URL</label><input type="text" id="f-source_url"></div>
 
     <div class="section-title">設備（SUUMO条件）</div>
@@ -338,12 +339,17 @@ function getFormData() {
   boolFields.forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el ? el.checked : false; });
   ['lat','lng'].forEach(function(k) { var el = document.getElementById('f-'+k); d[k] = el && el.value !== '' ? parseFloat(el.value) : null; });
   d.memo = document.getElementById('f-memo').value.trim() || null;
+  // 距離データをマージ
+  var dist = window._lastDistances || {};
+  d.supermarket_dist_m = dist.supermarket_dist_m != null ? dist.supermarket_dist_m : null;
+  d.hospital_dist_m = dist.hospital_dist_m != null ? dist.hospital_dist_m : null;
+  d.convenience_store_dist_m = dist.convenience_store_dist_m != null ? dist.convenience_store_dist_m : null;
   return d;
 }
 
 // ---- YAML builder ----
 function toYaml(id, d) {
-  var allFields = ['name','price_man','area_m2','age_years','floor_level','total_floors','direction','walk_to_station','station_name','address','lat','lng','source_url'].concat(boolFields).concat(['memo']);
+  var allFields = ['name','price_man','area_m2','age_years','floor_level','total_floors','direction','walk_to_station','station_name','address','lat','lng','supermarket_dist_m','hospital_dist_m','convenience_store_dist_m','source_url'].concat(boolFields).concat(['memo']);
   var lines = ['id: ' + id];
   allFields.forEach(function(k) {
     var v = d[k];
@@ -435,6 +441,7 @@ document.getElementById('btn-geocode').addEventListener('click', async function(
     document.getElementById('f-lat').value = coords.lat.toFixed(6);
     document.getElementById('f-lng').value = coords.lng.toFixed(6);
     status.textContent = '✓ 緯度: ' + coords.lat.toFixed(6) + '　経度: ' + coords.lng.toFixed(6);
+    onLatLngReady(coords.lat, coords.lng);
   } catch(e) {
     status.textContent = '⚠ ' + e.message;
   }
@@ -454,10 +461,69 @@ document.getElementById('f-address').addEventListener('blur', async function() {
     document.getElementById('f-lat').value = coords.lat.toFixed(6);
     document.getElementById('f-lng').value = coords.lng.toFixed(6);
     status.textContent = '✓ 自動取得: ' + coords.lat.toFixed(6) + ', ' + coords.lng.toFixed(6);
+    onLatLngReady(coords.lat, coords.lng);
   } catch(e) {
     status.textContent = '⚠ 自動取得失敗。📍ボタンで再試行してください';
   }
 });
+
+// ---- Overpass 距離取得 ----
+var OVERPASS_QUERIES = {
+  supermarket_dist_m:        '["shop"~"supermarket|grocery"]',
+  hospital_dist_m:           '["amenity"~"hospital|clinic"]',
+  convenience_store_dist_m:  '["shop"="convenience"]',
+};
+
+function haversineM(lat1, lng1, lat2, lng2) {
+  var R = 6371000;
+  var toRad = function(d) { return d * Math.PI / 180; };
+  var phi1 = toRad(lat1), phi2 = toRad(lat2);
+  var dphi = toRad(lat2 - lat1), dlambda = toRad(lng2 - lng1);
+  var a = Math.sin(dphi/2)**2 + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dlambda/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+async function fetchNearestDist(lat, lng, osmFilter, radiusM) {
+  radiusM = radiusM || 2000;
+  var query = '[out:json][timeout:20];node' + osmFilter + '(around:' + radiusM + ',' + lat + ',' + lng + ');out body 10;';
+  var url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+  var res = await fetch(url);
+  if (!res.ok) throw new Error('Overpass HTTP ' + res.status);
+  var data = await res.json();
+  if (!data.elements || data.elements.length === 0) return null;
+  var dists = data.elements.map(function(el) { return haversineM(lat, lng, el.lat, el.lon); });
+  return Math.round(Math.min.apply(null, dists));
+}
+
+async function fetchAllDistances(lat, lng) {
+  var status = document.getElementById('dist-status');
+  status.textContent = '🔍 周辺施設の距離を取得中...';
+  var results = {};
+  var keys = Object.keys(OVERPASS_QUERIES);
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    try {
+      results[key] = await fetchNearestDist(lat, lng, OVERPASS_QUERIES[key]);
+      if (i < keys.length - 1) await new Promise(function(r) { setTimeout(r, 1000); }); // 1秒待機
+    } catch(e) {
+      results[key] = null;
+    }
+  }
+  // 画面に反映
+  var labels = { supermarket_dist_m: 'スーパー', hospital_dist_m: '病院', convenience_store_dist_m: 'コンビニ' };
+  var parts = keys.map(function(k) {
+    return labels[k] + ': ' + (results[k] != null ? results[k] + 'm' : '不明');
+  });
+  status.textContent = '✓ ' + parts.join('　');
+  return results;
+}
+
+// 緯度経度確定後に距離を自動取得する共通関数
+async function onLatLngReady(lat, lng) {
+  var distRes = await fetchAllDistances(lat, lng);
+  // YAMLに含めるため一時保持
+  window._lastDistances = distRes;
+}
 
 // ---- Banner ----
 function showBanner(msg, type, autoHide) {
