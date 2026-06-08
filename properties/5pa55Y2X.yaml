@@ -11,7 +11,7 @@ station_name: "方南町"
 address: "東京都杉並区和泉4"
 lat: null
 lng: null
-source_url: "https://suumo.jp/ms/chuko/tokyo/sc_suginami/nc_20588693/"
+source_url: null
 pet_allowed: true
 renovation: true
 delivery_box: false
