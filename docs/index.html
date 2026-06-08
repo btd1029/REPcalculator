@@ -77,7 +77,7 @@
       </div>
       <div class="field">
         <label>リポジトリ</label>
-        <input type="text" id="s-repo" value="btd1029/repcalculator">
+        <input type="text" id="s-repo" value="btd1029/REPcalculator">
       </div>
       <div class="field">
         <label>ブランチ</label>
@@ -174,7 +174,7 @@
 function loadSettings() {
   document.getElementById('s-claude-key').value = localStorage.getItem('claude-key') || '';
   document.getElementById('s-gh-token').value = localStorage.getItem('gh-token') || '';
-  document.getElementById('s-repo').value = localStorage.getItem('repo') || 'btd1029/repcalculator';
+  document.getElementById('s-repo').value = localStorage.getItem('repo') || 'btd1029/REPcalculator';
   document.getElementById('s-branch').value = localStorage.getItem('branch') || 'claude/modest-brown-B9rEP';
 }
 function getSetting(k, def) { return localStorage.getItem(k) || def || ''; }
@@ -358,7 +358,7 @@ function toYaml(id, d) {
 // ---- Commit ----
 document.getElementById('btn-commit').addEventListener('click', async function() {
   var token = getSetting('gh-token');
-  var repo = getSetting('repo', 'btd1029/repcalculator');
+  var repo = getSetting('repo', 'btd1029/REPcalculator');
   var branch = getSetting('branch', 'claude/modest-brown-B9rEP');
   if (!token) { showBanner('GitHub PATを設定してください', 'error'); return; }
 
@@ -399,6 +399,7 @@ document.getElementById('btn-commit').addEventListener('click', async function()
     var parts = repo.split('/');
     var owner = parts[0]; var reponame = parts[1];
     var actionsUrl = 'https://github.com/' + repo + '/actions';
+    // reponame の大文字小文字をそのまま使う（設定パネルの値が正）
     var rankingUrl = 'https://' + owner + '.github.io/' + reponame + '/ranking.html';
     showBanner(
       '保存しました！ ID: <b>' + id + '</b><br>' +
