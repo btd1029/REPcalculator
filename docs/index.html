@@ -126,7 +126,14 @@
       <div class="field"><label>駅徒歩（分）</label><input type="number" id="f-walk_to_station"></div>
       <div class="field"><label>駅名</label><input type="text" id="f-station_name"></div>
     </div>
-    <div class="field"><label>住所</label><input type="text" id="f-address"></div>
+    <div class="field">
+      <label>住所</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="f-address" style="flex:1">
+        <button type="button" class="btn btn-save" id="btn-geocode" style="white-space:nowrap;flex-shrink:0;">📍 取得</button>
+      </div>
+      <div id="geocode-status" style="font-size:0.8rem;color:#6b7280;margin-top:4px;min-height:16px;"></div>
+    </div>
     <div class="fields-2col">
       <div class="field"><label>緯度</label><input type="number" id="f-lat" step="0.0001"></div>
       <div class="field"><label>経度</label><input type="number" id="f-lng" step="0.0001"></div>
@@ -403,6 +410,51 @@ document.getElementById('btn-commit').addEventListener('click', async function()
     showBanner('コミットエラー: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
+  }
+});
+
+// ---- Geocoding（国土地理院API）----
+async function geocodeAddress(address) {
+  var url = 'https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + encodeURIComponent(address);
+  var res = await fetch(url, { timeout: 10000 });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  var data = await res.json();
+  if (!data || data.length === 0) throw new Error('住所が見つかりませんでした');
+  var coords = data[0].geometry.coordinates; // [lng, lat]
+  return { lat: coords[1], lng: coords[0] };
+}
+
+document.getElementById('btn-geocode').addEventListener('click', async function() {
+  var address = document.getElementById('f-address').value.trim();
+  if (!address) { document.getElementById('geocode-status').textContent = '住所を入力してください'; return; }
+  var status = document.getElementById('geocode-status');
+  status.textContent = '取得中...';
+  try {
+    var coords = await geocodeAddress(address);
+    document.getElementById('f-lat').value = coords.lat.toFixed(6);
+    document.getElementById('f-lng').value = coords.lng.toFixed(6);
+    status.textContent = '✓ 緯度: ' + coords.lat.toFixed(6) + '　経度: ' + coords.lng.toFixed(6);
+  } catch(e) {
+    status.textContent = '⚠ ' + e.message;
+  }
+});
+
+// 住所フィールドからフォーカスが外れたとき自動で取得
+document.getElementById('f-address').addEventListener('blur', async function() {
+  var address = this.value.trim();
+  if (!address) return;
+  var lat = document.getElementById('f-lat').value;
+  var lng = document.getElementById('f-lng').value;
+  if (lat && lng) return; // すでに入力済みならスキップ
+  var status = document.getElementById('geocode-status');
+  status.textContent = '住所から緯度経度を自動取得中...';
+  try {
+    var coords = await geocodeAddress(address);
+    document.getElementById('f-lat').value = coords.lat.toFixed(6);
+    document.getElementById('f-lng').value = coords.lng.toFixed(6);
+    status.textContent = '✓ 自動取得: ' + coords.lat.toFixed(6) + ', ' + coords.lng.toFixed(6);
+  } catch(e) {
+    status.textContent = '⚠ 自動取得失敗。📍ボタンで再試行してください';
   }
 });
 
