@@ -9,9 +9,12 @@ direction: "南東"
 walk_to_station: 3
 station_name: "方南町"
 address: "東京都杉並区和泉4"
-lat: null
-lng: null
-source_url: null
+lat: 35.680042
+lng: 139.653351
+supermarket_dist_m: 402
+hospital_dist_m: 431
+convenience_store_dist_m: 1067
+source_url: "https://suumo.jp/ms/chuko/tokyo/sc_suginami/nc_20588693/"
 pet_allowed: true
 renovation: true
 delivery_box: false
