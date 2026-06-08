@@ -358,7 +358,7 @@ document.getElementById('btn-commit').addEventListener('click', async function()
   var d = getFormData();
   if (!d.name) { showBanner('物件名は必須です', 'error'); return; }
 
-  var id = btoa(d.name + Date.now()).replace(/[^a-z0-9]/gi,'').slice(0,8);
+  var id = btoa(unescape(encodeURIComponent(d.name + Date.now()))).replace(/[^a-z0-9]/gi,'').slice(0,8);
   var yaml = toYaml(id, d);
 
   // btoa for UTF-8
