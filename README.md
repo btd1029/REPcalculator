@@ -75,6 +75,26 @@ export GMAPS_API_KEY="your_api_key_here"
 
 ---
 
+## WebUI の使い方
+
+### セットアップ
+1. GitHubリポジトリの Settings → Pages → Source を `claude/modest-brown-B9rEP` ブランチの `/docs` フォルダに設定
+2. Settings → Secrets → Actions で `GITHUB_TOKEN` の書き込み権限を確認（デフォルトで有効）
+3. `https://<username>.github.io/<repo>/` にアクセス
+
+### 物件を登録する
+1. SUUMOで気になる物件のスクリーンショットを撮る
+2. WebUIを開き、設定パネルでClaude APIキーとGitHub PATを入力・保存
+3. スクリーンショットをアップロード（ドラッグ&ドロップまたはCtrl+V）
+4. 「抽出」ボタンを押すとClaude Visionが物件情報を読み取る
+5. 確認フォームで内容を修正し「確定・保存」
+6. GitHub Actionsが自動でスコアを計算し、ランキングページを更新（約1分）
+
+### ランキングを見る
+`https://<username>.github.io/<repo>/ranking.html` でコスパ順のランキングを確認できる。
+
+---
+
 ## 使い方
 
 ### 1. 物件情報を自動取得（SUUMO）
