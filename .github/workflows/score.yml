@@ -3,7 +3,7 @@ name: Score and Render Ranking
 on:
   push:
     branches:
-      - claude/modest-brown-B9rEP
+      - main
     paths:
       - 'properties/**'
 
