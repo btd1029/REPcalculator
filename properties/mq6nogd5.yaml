@@ -1,9 +1,9 @@
 id: mq6nogd5
 name: "マンションワコー落合"
 price_man: 3299
-monthly_fee_man: 2.41
+monthly_fee_man: 2.412
 area_m2: 47.89
-age_years: 56
+age_years: 55
 floor_level: 3
 total_floors: 6
 direction: "南西"
@@ -12,9 +12,9 @@ station_name: "中井"
 address: "東京都中野区上高田4"
 lat: 35.713402
 lng: 139.67868
-supermarket_dist_m: 413
+supermarket_dist_m: null
 hospital_dist_m: 929
-convenience_store_dist_m: null
+convenience_store_dist_m: 714
 park_dist_m: null
 school_dist_m: null
 hazard_risk: 2
@@ -36,4 +36,4 @@ security_camera: true
 new_earthquake_standard: false
 corner_unit: false
 top_floor: false
-memo: "1970年築で旧耐震基準。大規模修繕済。3駅4路線利用可。"
+memo: null

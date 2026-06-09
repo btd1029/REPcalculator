@@ -355,11 +355,11 @@ function updateWeightHint(){
   } else if(diff>0){
     hint.style.display='block';
     hint.style.background='#fffbeb';hint.style.color='#92400e';hint.style.border='1px solid #fcd34d';
-    hint.textContent='合計 '+total.toFixed(3)+' — あと '+diff.toFixed(3)+' 割り振ってください';
+    hint.textContent='合計 '+total.toFixed(3)+' — 1.000 に近づけると意図した配分になります（あと '+diff.toFixed(3)+' 足りません）';
   } else {
     hint.style.display='block';
     hint.style.background='#fef2f2';hint.style.color='#991b1b';hint.style.border='1px solid #fca5a5';
-    hint.textContent='合計 '+total.toFixed(3)+' — '+Math.abs(diff).toFixed(3)+' 削ってください';
+    hint.textContent='合計 '+total.toFixed(3)+' — 1.000 に近づけると意図した配分になります（'+Math.abs(diff).toFixed(3)+' 超過しています）';
   }
 }
 
