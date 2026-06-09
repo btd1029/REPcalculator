@@ -104,7 +104,9 @@ table.rank tr:hover td{background:#f9fafb;}
 
   <!-- 重み -->
   <div class="sec-hdr open" data-sec="sec-weights">重み（スライダー） <span class="arr">▶</span></div>
-  <div class="sec-body" id="sec-weights"></div>
+  <div class="sec-body" id="sec-weights">
+    <div id="weight-hint" style="font-size:.82rem;margin-bottom:8px;padding:6px 10px;border-radius:6px;display:none;"></div>
+  </div>
 
   <!-- 正規化レンジ -->
   <div class="sec-hdr" data-sec="sec-norm">正規化レンジ <span class="arr">▶</span></div>
@@ -342,9 +344,30 @@ document.querySelectorAll('.sec-hdr').forEach(function(hdr){
   });
 });
 
+function updateWeightHint(){
+  var total=0;
+  document.querySelectorAll('.wnum').forEach(function(inp){total+=parseFloat(inp.value)||0;});
+  total=Math.round(total*1000)/1000;
+  var hint=document.getElementById('weight-hint');
+  var diff=Math.round((1-total)*1000)/1000;
+  if(Math.abs(diff)<0.001){
+    hint.style.display='none';
+  } else if(diff>0){
+    hint.style.display='block';
+    hint.style.background='#fffbeb';hint.style.color='#92400e';hint.style.border='1px solid #fcd34d';
+    hint.textContent='合計 '+total.toFixed(3)+' — あと '+diff.toFixed(3)+' 割り振ってください';
+  } else {
+    hint.style.display='block';
+    hint.style.background='#fef2f2';hint.style.color='#991b1b';hint.style.border='1px solid #fca5a5';
+    hint.textContent='合計 '+total.toFixed(3)+' — '+Math.abs(diff).toFixed(3)+' 削ってください';
+  }
+}
+
 function buildWeights(cfg){
   var c=document.getElementById('sec-weights');
+  var hint=document.getElementById('weight-hint');
   c.innerHTML='';
+  c.appendChild(hint);
   Object.keys(WEIGHT_LABELS).forEach(function(k){
     var v=cfg.weights[k]!=null?cfg.weights[k]:0;
     var row=document.createElement('div');
@@ -359,16 +382,17 @@ function buildWeights(cfg){
     sl.addEventListener('input',function(){
       var k=this.dataset.wk;
       c.querySelector('.wnum[data-wk="'+k+'"]').value=parseFloat(this.value).toFixed(3);
-      recalc();
+      updateWeightHint();recalc();
     });
   });
   c.querySelectorAll('.wnum').forEach(function(inp){
     inp.addEventListener('change',function(){
       var k=this.dataset.wk;
       c.querySelector('.wsl[data-wk="'+k+'"]').value=this.value;
-      recalc();
+      updateWeightHint();recalc();
     });
   });
+  updateWeightHint();
 }
 
 function buildNorm(cfg){

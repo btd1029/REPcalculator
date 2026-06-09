@@ -104,7 +104,9 @@ table.rank tr:hover td{background:#f9fafb;}
 
   <!-- 重み -->
   <div class="sec-hdr open" data-sec="sec-weights">重み（スライダー） <span class="arr">▶</span></div>
-  <div class="sec-body" id="sec-weights"></div>
+  <div class="sec-body" id="sec-weights">
+    <div id="weight-hint" style="font-size:.82rem;margin-bottom:8px;padding:6px 10px;border-radius:6px;display:none;"></div>
+  </div>
 
   <!-- 正規化レンジ -->
   <div class="sec-hdr" data-sec="sec-norm">正規化レンジ <span class="arr">▶</span></div>
@@ -162,7 +164,7 @@ table.rank tr:hover td{background:#f9fafb;}
 <script>
 // ===== INJECTED DATA =====
 var PROPERTIES = /* __PROPERTIES__ */[{"id": "5pa55Y2X", "name": "方南町サーラ", "price_man": 2690, "area_m2": 38.34, "age_years": 53, "floor_level": 8, "total_floors": 13, "direction": "南東", "walk_to_station": 3, "station_name": "方南町", "address": "東京都杉並区和泉4", "lat": null, "lng": null, "source_url": null, "pet_allowed": true, "renovation": true, "delivery_box": false, "bathroom_dryer": true, "walk_in_closet": false, "auto_lock": true, "parking": false, "bike_parking": true, "floor_heating": false, "system_kitchen": true, "dishwasher": false, "monitor_intercom": true, "security_camera": true, "new_earthquake_standard": false, "corner_unit": false, "top_floor": false, "memo": null}, {"id": "mq6nc32i", "name": "東中野ハイム", "price_man": 4580, "monthly_fee_man": 2.45, "area_m2": 53.08, "age_years": 51, "floor_level": 13, "total_floors": 14, "direction": "南", "walk_to_station": 7, "station_name": "落合", "address": "東京都中野区東中野5", "lat": 35.708805, "lng": 139.689224, "supermarket_dist_m": null, "hospital_dist_m": 996, "convenience_store_dist_m": null, "park_dist_m": null, "school_dist_m": 175, "hazard_risk": 0, "source_url": "https://suumo.jp/ms/chuko/tokyo/sc_nakano/nc_20886442/", "pet_allowed": true, "renovation": true, "delivery_box": false, "bathroom_dryer": false, "walk_in_closet": false, "auto_lock": false, "elevator": true, "parking": true, "bike_parking": true, "floor_heating": false, "system_kitchen": false, "dishwasher": false, "monitor_intercom": false, "security_camera": false, "new_earthquake_standard": false, "corner_unit": false, "top_floor": false, "memo": null}, {"id": "mq6nckpv", "name": "東中野ハイム", "price_man": 4580, "monthly_fee_man": 2.45, "area_m2": 53.08, "age_years": 51, "floor_level": 13, "total_floors": 14, "direction": "南", "walk_to_station": 7, "station_name": "落合", "address": "東京都中野区東中野5", "lat": 35.708805, "lng": 139.689224, "supermarket_dist_m": null, "hospital_dist_m": 996, "convenience_store_dist_m": null, "park_dist_m": null, "school_dist_m": 175, "hazard_risk": 0, "source_url": "https://suumo.jp/ms/chuko/tokyo/sc_nakano/nc_20886442/", "pet_allowed": true, "renovation": true, "delivery_box": false, "bathroom_dryer": false, "walk_in_closet": false, "auto_lock": false, "elevator": true, "parking": true, "bike_parking": true, "floor_heating": false, "system_kitchen": false, "dishwasher": false, "monitor_intercom": false, "security_camera": false, "new_earthquake_standard": false, "corner_unit": false, "top_floor": false, "memo": null}, {"id": "mq6nogd5", "name": "マンションワコー落合", "price_man": 3299, "monthly_fee_man": 2.412, "area_m2": 47.89, "age_years": 55, "floor_level": 3, "total_floors": 6, "direction": "南西", "walk_to_station": 8, "station_name": "中井", "address": "東京都中野区上高田4", "lat": 35.713402, "lng": 139.67868, "supermarket_dist_m": null, "hospital_dist_m": 929, "convenience_store_dist_m": 714, "park_dist_m": null, "school_dist_m": null, "hazard_risk": 2, "source_url": "https://suumo.jp/ms/chuko/tokyo/sc_nakano/nc_20906576/", "pet_allowed": false, "renovation": false, "delivery_box": false, "bathroom_dryer": false, "walk_in_closet": true, "auto_lock": true, "elevator": true, "parking": true, "bike_parking": true, "floor_heating": false, "system_kitchen": true, "dishwasher": false, "monitor_intercom": false, "security_camera": true, "new_earthquake_standard": false, "corner_unit": false, "top_floor": false, "memo": null}, {"id": "sample_001", "name": "サンプルマンション301", "source_url": "https://suumo.jp/ms/chuko/tokyo/...", "price_man": 5800, "area_m2": 65.5, "age_years": 12, "floor_level": 8, "total_floors": 14, "direction": "南", "walk_to_station": 7, "station_name": "渋谷", "address": "東京都渋谷区...", "lat": 35.658, "lng": 139.7016, "supermarket_dist_m": null, "hospital_dist_m": null, "convenience_store_dist_m": null, "theoretical_price_man": null, "pet_allowed": true, "renovation": false, "delivery_box": true, "bathroom_dryer": true, "walk_in_closet": false, "auto_lock": true, "parking": false, "bike_parking": true, "floor_heating": false, "system_kitchen": true, "dishwasher": false, "monitor_intercom": true, "security_camera": true, "new_earthquake_standard": true, "corner_unit": false, "top_floor": false, "memo": ""}];
-var GENERATED  = /* __GENERATED__ */"2026-06-09 13:08:51";
+var GENERATED  = /* __GENERATED__ */"2026-06-09 13:14:23";
 
 // ===== DEFAULT CONFIG =====
 var DEFAULT_CONFIG = {
@@ -342,9 +344,30 @@ document.querySelectorAll('.sec-hdr').forEach(function(hdr){
   });
 });
 
+function updateWeightHint(){
+  var total=0;
+  document.querySelectorAll('.wnum').forEach(function(inp){total+=parseFloat(inp.value)||0;});
+  total=Math.round(total*1000)/1000;
+  var hint=document.getElementById('weight-hint');
+  var diff=Math.round((1-total)*1000)/1000;
+  if(Math.abs(diff)<0.001){
+    hint.style.display='none';
+  } else if(diff>0){
+    hint.style.display='block';
+    hint.style.background='#fffbeb';hint.style.color='#92400e';hint.style.border='1px solid #fcd34d';
+    hint.textContent='合計 '+total.toFixed(3)+' — あと '+diff.toFixed(3)+' 割り振ってください';
+  } else {
+    hint.style.display='block';
+    hint.style.background='#fef2f2';hint.style.color='#991b1b';hint.style.border='1px solid #fca5a5';
+    hint.textContent='合計 '+total.toFixed(3)+' — '+Math.abs(diff).toFixed(3)+' 削ってください';
+  }
+}
+
 function buildWeights(cfg){
   var c=document.getElementById('sec-weights');
+  var hint=document.getElementById('weight-hint');
   c.innerHTML='';
+  c.appendChild(hint);
   Object.keys(WEIGHT_LABELS).forEach(function(k){
     var v=cfg.weights[k]!=null?cfg.weights[k]:0;
     var row=document.createElement('div');
@@ -359,16 +382,17 @@ function buildWeights(cfg){
     sl.addEventListener('input',function(){
       var k=this.dataset.wk;
       c.querySelector('.wnum[data-wk="'+k+'"]').value=parseFloat(this.value).toFixed(3);
-      recalc();
+      updateWeightHint();recalc();
     });
   });
   c.querySelectorAll('.wnum').forEach(function(inp){
     inp.addEventListener('change',function(){
       var k=this.dataset.wk;
       c.querySelector('.wsl[data-wk="'+k+'"]').value=this.value;
-      recalc();
+      updateWeightHint();recalc();
     });
   });
+  updateWeightHint();
 }
 
 function buildNorm(cfg){
