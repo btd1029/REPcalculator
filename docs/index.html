@@ -370,35 +370,77 @@ function toYaml(id, d) {
 }
 
 // ---- Commit ----
+
+// 既存物件を一覧取得して重複チェック
+async function findDuplicate(token, repo, branch, name, sourceUrl) {
+  var listRes = await fetch(
+    'https://api.github.com/repos/' + repo + '/contents/properties?ref=' + encodeURIComponent(branch),
+    { headers: { Authorization: 'Bearer ' + token } }
+  );
+  if (!listRes.ok) return null;
+  var files = await listRes.json();
+  if (!Array.isArray(files)) return null;
+
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (!f.name.endsWith('.yaml')) continue;
+    var contentRes = await fetch(f.url + '?ref=' + encodeURIComponent(branch), {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!contentRes.ok) continue;
+    var cd = await contentRes.json();
+    var text = decodeURIComponent(escape(atob(cd.content.replace(/\n/g, ''))));
+    var existingName = (text.match(/^name:\s*"?(.+?)"?\s*$/m) || [])[1];
+    var existingUrl  = (text.match(/^source_url:\s*"?(.+?)"?\s*$/m) || [])[1];
+    var nameMatch = existingName && existingName === name;
+    var urlMatch  = sourceUrl && existingUrl && existingUrl === sourceUrl && existingUrl !== 'null';
+    if (nameMatch || urlMatch) {
+      return { id: f.name.replace('.yaml',''), path: f.path, sha: cd.sha };
+    }
+  }
+  return null;
+}
+
 document.getElementById('btn-commit').addEventListener('click', async function() {
   var token = getSetting('gh-token');
   var repo = getSetting('repo', 'btd1029/REPcalculator');
-  var branch = getSetting('branch', 'claude/modest-brown-B9rEP');
+  var branch = getSetting('branch', 'main');
   if (!token) { showBanner('GitHub PATを設定してください', 'error'); return; }
 
   var d = getFormData();
   if (!d.name) { showBanner('物件名は必須です', 'error'); return; }
 
-  var id = (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).slice(0, 8);
-  var yaml = toYaml(id, d);
-
-  // btoa for UTF-8
-  var content = btoa(unescape(encodeURIComponent(yaml)));
-  var path = 'properties/' + id + '.yaml';
-  var apiBase = 'https://api.github.com/repos/' + repo + '/contents/' + path;
-
   var btn = document.getElementById('btn-commit');
   btn.disabled = true;
 
   try {
-    var sha = undefined;
-    var getRes = await fetch(apiBase + '?ref=' + encodeURIComponent(branch), {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    if (getRes.ok) { var gd = await getRes.json(); sha = gd.sha; }
+    // 重複チェック
+    showBanner('<span class="spinner"></span>重複チェック中...', 'success');
+    var dup = await findDuplicate(token, repo, branch, d.name, d.source_url);
 
-    var body = { message: 'Add property: ' + d.name, content: content, branch: branch };
-    if (sha) body.sha = sha;
+    var id, path, existingSha;
+    if (dup) {
+      var overwrite = confirm('「' + d.name + '」は既に登録されています（ID: ' + dup.id + '）。\n上書き保存しますか？');
+      if (!overwrite) { showBanner('保存をキャンセルしました', 'error', 2000); return; }
+      id = dup.id;
+      path = dup.path;
+      existingSha = dup.sha;
+    } else {
+      id = (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).slice(0, 8);
+      path = 'properties/' + id + '.yaml';
+      existingSha = undefined;
+    }
+
+    var yaml = toYaml(id, d);
+    var content = btoa(unescape(encodeURIComponent(yaml)));
+    var apiBase = 'https://api.github.com/repos/' + repo + '/contents/' + path;
+
+    var body = {
+      message: (dup ? 'Update' : 'Add') + ' property: ' + d.name,
+      content: content,
+      branch: branch
+    };
+    if (existingSha) body.sha = existingSha;
 
     var putRes = await fetch(apiBase, {
       method: 'PUT',
@@ -413,10 +455,9 @@ document.getElementById('btn-commit').addEventListener('click', async function()
     var parts = repo.split('/');
     var owner = parts[0]; var reponame = parts[1];
     var actionsUrl = 'https://github.com/' + repo + '/actions';
-    // reponame の大文字小文字をそのまま使う（設定パネルの値が正）
     var rankingUrl = 'https://' + owner + '.github.io/' + reponame + '/ranking.html';
     showBanner(
-      '保存しました！ ID: <b>' + id + '</b><br>' +
+      (dup ? '上書き' : '保存') + 'しました！ ID: <b>' + id + '</b><br>' +
       '<a href="' + actionsUrl + '" target="_blank">Actions を確認</a> ／ ' +
       '<a href="' + rankingUrl + '" target="_blank">ランキングを見る</a>',
       'success'
