@@ -371,31 +371,35 @@ function toYaml(id, d) {
 
 // ---- Commit ----
 
-// 既存物件を一覧取得して重複チェック
-async function findDuplicate(token, repo, branch, name, sourceUrl) {
-  var listRes = await fetch(
-    'https://api.github.com/repos/' + repo + '/contents/properties?ref=' + encodeURIComponent(branch),
-    { headers: { Authorization: 'Bearer ' + token } }
-  );
-  if (!listRes.ok) return null;
-  var files = await listRes.json();
-  if (!Array.isArray(files)) return null;
+// ranking.html の埋め込みデータから物件名で重複チェック（API不要）
+var _cachedProperties = null;
+async function loadExistingProperties() {
+  if (_cachedProperties) return _cachedProperties;
+  try {
+    var res = await fetch('ranking.html?_=' + Date.now());
+    if (!res.ok) return [];
+    var html = await res.text();
+    var m = html.match(/\/\* __PROPERTIES__ \*\/(\[.*?\]);/s);
+    _cachedProperties = m ? JSON.parse(m[1]) : [];
+  } catch(e) { _cachedProperties = []; }
+  return _cachedProperties;
+}
 
-  for (var i = 0; i < files.length; i++) {
-    var f = files[i];
-    if (!f.name.endsWith('.yaml')) continue;
-    var contentRes = await fetch(f.url + '?ref=' + encodeURIComponent(branch), {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    if (!contentRes.ok) continue;
-    var cd = await contentRes.json();
-    var text = decodeURIComponent(escape(atob(cd.content.replace(/\n/g, ''))));
-    var existingName = (text.match(/^name:\s*"?(.+?)"?\s*$/m) || [])[1];
-    var existingUrl  = (text.match(/^source_url:\s*"?(.+?)"?\s*$/m) || [])[1];
-    var nameMatch = existingName && existingName === name;
-    var urlMatch  = sourceUrl && existingUrl && existingUrl === sourceUrl && existingUrl !== 'null';
+async function findDuplicate(token, repo, branch, name, sourceUrl) {
+  var props = await loadExistingProperties();
+  for (var i = 0; i < props.length; i++) {
+    var p = props[i];
+    var nameMatch = p.name && p.name === name;
+    var urlMatch  = sourceUrl && p.source_url && p.source_url === sourceUrl;
     if (nameMatch || urlMatch) {
-      return { id: f.name.replace('.yaml',''), path: f.path, sha: cd.sha };
+      // SHAはGitHub APIで1件だけ取得
+      var path = 'properties/' + p.id + '.yaml';
+      var shaRes = await fetch(
+        'https://api.github.com/repos/' + repo + '/contents/' + path + '?ref=' + encodeURIComponent(branch),
+        { headers: { Authorization: 'Bearer ' + token } }
+      );
+      var sha = shaRes.ok ? (await shaRes.json()).sha : undefined;
+      return { id: p.id, path: path, sha: sha };
     }
   }
   return null;
