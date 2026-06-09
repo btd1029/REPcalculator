@@ -531,8 +531,47 @@ async function fetchAllDistances(lat, lng) {
 // 緯度経度確定後に距離を自動取得する共通関数
 async function onLatLngReady(lat, lng) {
   var distRes = await fetchAllDistances(lat, lng);
-  // YAMLに含めるため一時保持
   window._lastDistances = distRes;
+  await fetchHazardRisk(lat, lng);
+}
+
+// ---- 宇津研ハザードリスク自動取得 ----
+function hazardToRisk(loc) {
+  var score = 0;
+  // 洪水 flood_l2: 0-8 → リスク0-3
+  var fl = parseInt(loc.flood_l2) || 0;
+  if (fl >= 6) score = Math.max(score, 3);
+  else if (fl >= 3) score = Math.max(score, 2);
+  else if (fl >= 1) score = Math.max(score, 1);
+  // 土砂災害（boolean）
+  if (loc.dosekiryukeikaikuiki || loc.kyukeishakeikaikuiki || loc.jisuberikeikaikuiki) score = Math.max(score, 2);
+  // 津波
+  var ts = parseInt(loc.tsunami_newlegend) || 0;
+  if (ts >= 3) score = Math.max(score, 3);
+  else if (ts >= 1) score = Math.max(score, 2);
+  // 高潮
+  var ht = parseInt(loc.hightide) || 0;
+  if (ht >= 1) score = Math.max(score, 1);
+  return score;
+}
+
+async function fetchHazardRisk(lat, lng) {
+  var hazardStatus = document.getElementById('geocode-status');
+  var hazardField = document.getElementById('f-hazard_risk');
+  var prev = hazardStatus.textContent;
+  hazardStatus.textContent = prev + '　🔍 ハザード取得中...';
+  try {
+    var url = 'https://utsuken.sub.jp/hazards/outlines/' + lng + '/' + lat + '/12';
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    var loc = data.specified_location || {};
+    var risk = hazardToRisk(loc);
+    hazardField.value = risk;
+    hazardStatus.textContent = prev + '　✓ ハザードリスク: ' + risk + '/5';
+  } catch(e) {
+    hazardStatus.textContent = prev + '　⚠ ハザード自動取得失敗（手動入力してください）';
+  }
 }
 
 // ---- Banner ----
