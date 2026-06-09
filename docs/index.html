@@ -81,7 +81,7 @@
       </div>
       <div class="field">
         <label>ブランチ</label>
-        <input type="text" id="s-branch" value="claude/modest-brown-B9rEP">
+        <input type="text" id="s-branch" value="main">
       </div>
       <button class="btn btn-save" id="btn-save-settings">保存</button>
     </div>
@@ -182,7 +182,7 @@ function loadSettings() {
   document.getElementById('s-claude-key').value = localStorage.getItem('claude-key') || '';
   document.getElementById('s-gh-token').value = localStorage.getItem('gh-token') || '';
   document.getElementById('s-repo').value = localStorage.getItem('repo') || 'btd1029/REPcalculator';
-  document.getElementById('s-branch').value = localStorage.getItem('branch') || 'claude/modest-brown-B9rEP';
+  document.getElementById('s-branch').value = localStorage.getItem('branch') || 'main';
 }
 function getSetting(k, def) { return localStorage.getItem(k) || def || ''; }
 
