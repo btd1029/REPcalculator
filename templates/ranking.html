@@ -162,9 +162,26 @@ table.rank tr:hover td{background:#f9fafb;}
 
 </div><!-- /container -->
 <script>
-// ===== INJECTED DATA =====
+// ===== INJECTED DATA (fallback) =====
 var PROPERTIES = /* __PROPERTIES__ */[];
 var GENERATED  = /* __GENERATED__ */"";
+
+// ===== SUPABASE =====
+var SUPA_URL = 'https://qrcvdfecqasifacttqbt.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyY3ZkZmVjcWFzaWZhY3R0cWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzI1NDgsImV4cCI6MjA5NjYwODU0OH0.7aISGnOFwyN8P4fhglVUaewG--Lgq8aWm6u8pNBqdWw';
+
+async function loadFromSupabase(){
+  try{
+    var res=await fetch(SUPA_URL+'/rest/v1/properties?select=*&order=created_at.desc',{
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return await res.json();
+  }catch(e){
+    console.warn('Supabase fetch failed, using embedded data:',e);
+    return null;
+  }
+}
 
 // ===== DEFAULT CONFIG =====
 var DEFAULT_CONFIG = {
@@ -651,10 +668,21 @@ document.getElementById('settings-toggle').addEventListener('click',function(){
 document.getElementById('pet-filter').addEventListener('change',recalc);
 
 // boot
-document.getElementById('rank-foot').textContent='更新: '+GENERATED;
 var _cfg=loadCfg();
 buildUI(_cfg);
-recalc();
+document.getElementById('rank-count').textContent='読み込み中...';
+loadFromSupabase().then(function(rows){
+  if(rows!==null){
+    PROPERTIES=rows;
+    var ts=rows.length?new Date(rows.reduce(function(a,b){
+      return a.created_at>b.created_at?a:b;
+    }).created_at).toLocaleString('ja-JP'):'';
+    document.getElementById('rank-foot').textContent='Supabase: '+rows.length+'件'+(ts?' / 最終登録: '+ts:'');
+  } else {
+    document.getElementById('rank-foot').textContent='更新: '+GENERATED+'（埋め込みデータ）';
+  }
+  recalc();
+});
 </script>
 </body>
 </html>

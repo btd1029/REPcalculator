@@ -72,16 +72,12 @@
         <input type="password" id="s-claude-key" placeholder="sk-ant-..." autocomplete="off">
       </div>
       <div class="field">
-        <label>GitHub PAT</label>
-        <input type="password" id="s-gh-token" placeholder="ghp_..." autocomplete="off">
+        <label>Supabase URL</label>
+        <input type="text" id="s-supa-url" placeholder="https://xxx.supabase.co">
       </div>
       <div class="field">
-        <label>リポジトリ</label>
-        <input type="text" id="s-repo" value="btd1029/REPcalculator">
-      </div>
-      <div class="field">
-        <label>ブランチ</label>
-        <input type="text" id="s-branch" value="main">
+        <label>Supabase anon key</label>
+        <input type="password" id="s-supa-key" placeholder="eyJ..." autocomplete="off">
       </div>
       <button class="btn btn-save" id="btn-save-settings">保存</button>
     </div>
@@ -178,22 +174,29 @@
 
 <script>
 // ---- Settings ----
+var SUPA_URL_DEFAULT = 'https://qrcvdfecqasifacttqbt.supabase.co';
+var SUPA_KEY_DEFAULT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyY3ZkZmVjcWFzaWZhY3R0cWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzI1NDgsImV4cCI6MjA5NjYwODU0OH0.7aISGnOFwyN8P4fhglVUaewG--Lgq8aWm6u8pNBqdWw';
+
 function loadSettings() {
   document.getElementById('s-claude-key').value = localStorage.getItem('claude-key') || '';
-  document.getElementById('s-gh-token').value = localStorage.getItem('gh-token') || '';
-  document.getElementById('s-repo').value = localStorage.getItem('repo') || 'btd1029/REPcalculator';
-  document.getElementById('s-branch').value = localStorage.getItem('branch') || 'main';
+  document.getElementById('s-supa-url').value = localStorage.getItem('supa-url') || SUPA_URL_DEFAULT;
+  document.getElementById('s-supa-key').value = localStorage.getItem('supa-key') || SUPA_KEY_DEFAULT;
 }
 function getSetting(k, def) { return localStorage.getItem(k) || def || ''; }
+function getSupaUrl() { return getSetting('supa-url', SUPA_URL_DEFAULT); }
+function getSupaKey() { return getSetting('supa-key', SUPA_KEY_DEFAULT); }
+function supaHeaders() {
+  var key = getSupaKey();
+  return { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' };
+}
 
 document.getElementById('settings-toggle').addEventListener('click', function() {
   document.getElementById('settings-body').classList.toggle('hidden');
 });
 document.getElementById('btn-save-settings').addEventListener('click', function() {
   localStorage.setItem('claude-key', document.getElementById('s-claude-key').value.trim());
-  localStorage.setItem('gh-token', document.getElementById('s-gh-token').value.trim());
-  localStorage.setItem('repo', document.getElementById('s-repo').value.trim());
-  localStorage.setItem('branch', document.getElementById('s-branch').value.trim());
+  localStorage.setItem('supa-url', document.getElementById('s-supa-url').value.trim());
+  localStorage.setItem('supa-key', document.getElementById('s-supa-key').value.trim());
   document.getElementById('settings-body').classList.add('hidden');
   showBanner('設定を保存しました', 'success', 2000);
 });
@@ -385,46 +388,21 @@ function toYaml(id, d) {
 
 // ---- Commit ----
 
-// ranking.html の埋め込みデータから物件名で重複チェック（API不要）
-var _cachedProperties = null;
-async function loadExistingProperties() {
-  if (_cachedProperties) return _cachedProperties;
-  try {
-    var res = await fetch('ranking.html?_=' + Date.now());
-    if (!res.ok) return [];
-    var html = await res.text();
-    var m = html.match(/\/\* __PROPERTIES__ \*\/(\[.*?\]);/s);
-    _cachedProperties = m ? JSON.parse(m[1]) : [];
-  } catch(e) { _cachedProperties = []; }
-  return _cachedProperties;
-}
-
-async function findDuplicate(token, repo, branch, name, sourceUrl) {
-  var props = await loadExistingProperties();
-  for (var i = 0; i < props.length; i++) {
-    var p = props[i];
-    var nameMatch = p.name && p.name === name;
-    var urlMatch  = sourceUrl && p.source_url && p.source_url === sourceUrl;
-    if (nameMatch || urlMatch) {
-      // SHAはGitHub APIで1件だけ取得
-      var path = 'properties/' + p.id + '.yaml';
-      var shaRes = await fetch(
-        'https://api.github.com/repos/' + repo + '/contents/' + path + '?ref=' + encodeURIComponent(branch),
-        { headers: { Authorization: 'Bearer ' + token } }
-      );
-      var sha = shaRes.ok ? (await shaRes.json()).sha : undefined;
-      return { id: p.id, path: path, sha: sha };
-    }
+// ---- Supabase 重複チェック ----
+async function findDuplicate(name, sourceUrl) {
+  var base = getSupaUrl() + '/rest/v1/properties';
+  var h = supaHeaders();
+  var res = await fetch(base + '?name=eq.' + encodeURIComponent(name) + '&select=id', { headers: h });
+  if (res.ok) { var rows = await res.json(); if (rows.length) return rows[0]; }
+  if (sourceUrl) {
+    var res2 = await fetch(base + '?source_url=eq.' + encodeURIComponent(sourceUrl) + '&select=id', { headers: h });
+    if (res2.ok) { var rows2 = await res2.json(); if (rows2.length) return rows2[0]; }
   }
   return null;
 }
 
+// ---- 保存（Supabase upsert）----
 document.getElementById('btn-commit').addEventListener('click', async function() {
-  var token = getSetting('gh-token');
-  var repo = getSetting('repo', 'btd1029/REPcalculator');
-  var branch = getSetting('branch', 'main');
-  if (!token) { showBanner('GitHub PATを設定してください', 'error'); return; }
-
   var d = getFormData();
   if (!d.name) { showBanner('物件名は必須です', 'error'); return; }
 
@@ -432,56 +410,35 @@ document.getElementById('btn-commit').addEventListener('click', async function()
   btn.disabled = true;
 
   try {
-    // 重複チェック
     showBanner('<span class="spinner"></span>重複チェック中...', 'success');
-    var dup = await findDuplicate(token, repo, branch, d.name, d.source_url);
+    var dup = await findDuplicate(d.name, d.source_url);
 
-    var id, path, existingSha;
+    var id;
     if (dup) {
       var overwrite = confirm('「' + d.name + '」は既に登録されています（ID: ' + dup.id + '）。\n上書き保存しますか？');
       if (!overwrite) { showBanner('保存をキャンセルしました', 'error', 2000); return; }
       id = dup.id;
-      path = dup.path;
-      existingSha = dup.sha;
     } else {
       id = (Date.now().toString(36) + Math.random().toString(36).slice(2, 6)).slice(0, 8);
-      path = 'properties/' + id + '.yaml';
-      existingSha = undefined;
     }
 
-    var yaml = toYaml(id, d);
-    var content = btoa(unescape(encodeURIComponent(yaml)));
-    var apiBase = 'https://api.github.com/repos/' + repo + '/contents/' + path;
-
-    var body = {
-      message: (dup ? 'Update' : 'Add') + ' property: ' + d.name,
-      content: content,
-      branch: branch
-    };
-    if (existingSha) body.sha = existingSha;
-
-    var putRes = await fetch(apiBase, {
-      method: 'PUT',
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+    var record = Object.assign({ id: id }, d);
+    var h = Object.assign(supaHeaders(), { 'Prefer': 'resolution=merge-duplicates' });
+    var res = await fetch(getSupaUrl() + '/rest/v1/properties', {
+      method: 'POST', headers: h, body: JSON.stringify(record)
     });
-    if (!putRes.ok) {
-      var perr = await putRes.json().catch(function() { return {}; });
-      throw new Error(perr.message || ('HTTP ' + putRes.status));
+    if (!res.ok) {
+      var err = await res.json().catch(function() { return {}; });
+      throw new Error(err.message || ('HTTP ' + res.status));
     }
 
-    var parts = repo.split('/');
-    var owner = parts[0]; var reponame = parts[1];
-    var actionsUrl = 'https://github.com/' + repo + '/actions';
-    var rankingUrl = 'https://' + owner + '.github.io/' + reponame + '/ranking.html';
     showBanner(
       (dup ? '上書き' : '保存') + 'しました！ ID: <b>' + id + '</b><br>' +
-      '<a href="' + actionsUrl + '" target="_blank">Actions を確認</a> ／ ' +
-      '<a href="' + rankingUrl + '" target="_blank">ランキングを見る</a>',
+      '<a href="ranking.html" target="_blank">ランキングを見る</a>',
       'success'
     );
-  } catch (e) {
-    showBanner('コミットエラー: ' + e.message, 'error');
+  } catch(e) {
+    showBanner('保存エラー: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
   }
