@@ -334,6 +334,19 @@ function populateForm(d) {
   if (dir && d.direction) dir.value = d.direction;
   boolFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.checked = !!d[k]; });
   ['lat','lng'].forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
+  // 住所があり緯度経度が未設定なら自動ジオコーディング
+  if (d.address && !d.lat && !d.lng) {
+    var status = document.getElementById('geocode-status');
+    status.textContent = '住所から自動取得中...';
+    geocodeAddress(d.address).then(function(coords) {
+      document.getElementById('f-lat').value = coords.lat.toFixed(6);
+      document.getElementById('f-lng').value = coords.lng.toFixed(6);
+      status.textContent = '✓ ' + coords.lat.toFixed(6) + ', ' + coords.lng.toFixed(6);
+      onLatLngReady(coords.lat, coords.lng);
+    }).catch(function(e) {
+      status.textContent = '⚠ 自動取得失敗。📍ボタンで再試行してください';
+    });
+  }
 }
 
 function getFormData() {
