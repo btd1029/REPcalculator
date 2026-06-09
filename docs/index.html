@@ -111,6 +111,7 @@
     <div class="field"><label>物件名 *</label><input type="text" id="f-name" required></div>
     <div class="fields-2col">
       <div class="field"><label>価格（万円）</label><input type="number" id="f-price_man"></div>
+      <div class="field"><label>管理費+修繕積立（万円/月）</label><input type="number" id="f-monthly_fee_man" step="0.1"></div>
       <div class="field"><label>面積（㎡）</label><input type="number" id="f-area_m2" step="0.1"></div>
       <div class="field"><label>築年数</label><input type="number" id="f-age_years"></div>
       <div class="field"><label>階数</label><input type="number" id="f-floor_level"></div>
@@ -139,6 +140,10 @@
       <div class="field"><label>経度</label><input type="number" id="f-lng" step="0.0001"></div>
     </div>
     <div id="dist-status" style="font-size:0.8rem;color:#6b7280;margin-top:4px;min-height:16px;"></div>
+    <div class="field">
+      <label>ハザードリスク（0=安全〜5=高リスク）</label>
+      <input type="number" id="f-hazard_risk" min="0" max="5" step="1" placeholder="国土交通省ハザードマップで確認">
+    </div>
     <div class="field"><label>物件URL</label><input type="text" id="f-source_url"></div>
 
     <div class="section-title">設備（SUUMO条件）</div>
@@ -149,6 +154,7 @@
       <label class="checkbox-item"><input type="checkbox" id="f-bathroom_dryer"> 浴室乾燥機</label>
       <label class="checkbox-item"><input type="checkbox" id="f-walk_in_closet"> ウォークインクローゼット</label>
       <label class="checkbox-item"><input type="checkbox" id="f-auto_lock"> オートロック</label>
+      <label class="checkbox-item"><input type="checkbox" id="f-elevator"> エレベーター</label>
       <label class="checkbox-item"><input type="checkbox" id="f-parking"> 駐車場</label>
       <label class="checkbox-item"><input type="checkbox" id="f-bike_parking"> 駐輪場</label>
       <label class="checkbox-item"><input type="checkbox" id="f-floor_heating"> 床暖房</label>
@@ -288,7 +294,7 @@ document.getElementById('btn-extract').addEventListener('click', async function(
               : { type: 'image',    source: { type: 'base64', media_type: currentMime,        data: currentBase64 } },
             {
               type: 'text',
-              text: '以下のSUUMO物件情報（スクリーンショットまたはPDF）から情報をJSONで抽出してください。\n不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。\n\n{"name":"物件名","price_man":数値,"area_m2":数値,"age_years":数値,"floor_level":数値,"total_floors":数値,"direction":"南/南東/南西/東/西/北東/北西/北","walk_to_station":数値,"station_name":"駅名","address":"住所","source_url":null,"pet_allowed":bool,"renovation":bool,"delivery_box":bool,"bathroom_dryer":bool,"walk_in_closet":bool,"auto_lock":bool,"parking":bool,"bike_parking":bool,"floor_heating":bool,"system_kitchen":bool,"dishwasher":bool,"monitor_intercom":bool,"security_camera":bool,"new_earthquake_standard":bool,"corner_unit":bool,"top_floor":bool}\n\nJSONのみ返してください。'
+              text: '以下のSUUMO物件情報（スクリーンショットまたはPDF）から情報をJSONで抽出してください。\n不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。\nmonthly_fee_manは管理費と修繕積立金の合計（万円/月、数値）。\n\n{"name":"物件名","price_man":数値,"monthly_fee_man":数値,"area_m2":数値,"age_years":数値,"floor_level":数値,"total_floors":数値,"direction":"南/南東/南西/東/西/北東/北西/北","walk_to_station":数値,"station_name":"駅名","address":"住所","source_url":null,"pet_allowed":bool,"renovation":bool,"delivery_box":bool,"bathroom_dryer":bool,"walk_in_closet":bool,"auto_lock":bool,"elevator":bool,"parking":bool,"bike_parking":bool,"floor_heating":bool,"system_kitchen":bool,"dishwasher":bool,"monitor_intercom":bool,"security_camera":bool,"new_earthquake_standard":bool,"corner_unit":bool,"top_floor":bool}\n\nJSONのみ返してください。'
             }
           ]
         }]
@@ -317,9 +323,9 @@ document.getElementById('btn-extract').addEventListener('click', async function(
 });
 
 // ---- Form ----
-var boolFields = ['pet_allowed','renovation','delivery_box','bathroom_dryer','walk_in_closet','auto_lock','parking','bike_parking','floor_heating','system_kitchen','dishwasher','monitor_intercom','security_camera','new_earthquake_standard','corner_unit','top_floor'];
+var boolFields = ['pet_allowed','renovation','delivery_box','bathroom_dryer','walk_in_closet','auto_lock','elevator','parking','bike_parking','floor_heating','system_kitchen','dishwasher','monitor_intercom','security_camera','new_earthquake_standard','corner_unit','top_floor'];
 var textFields = ['name','station_name','address','source_url'];
-var numFields = ['price_man','area_m2','age_years','floor_level','total_floors','walk_to_station'];
+var numFields = ['price_man','monthly_fee_man','area_m2','age_years','floor_level','total_floors','walk_to_station','hazard_risk'];
 
 function populateForm(d) {
   textFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
@@ -344,12 +350,14 @@ function getFormData() {
   d.supermarket_dist_m = dist.supermarket_dist_m != null ? dist.supermarket_dist_m : null;
   d.hospital_dist_m = dist.hospital_dist_m != null ? dist.hospital_dist_m : null;
   d.convenience_store_dist_m = dist.convenience_store_dist_m != null ? dist.convenience_store_dist_m : null;
+  d.park_dist_m = dist.park_dist_m != null ? dist.park_dist_m : null;
+  d.school_dist_m = dist.school_dist_m != null ? dist.school_dist_m : null;
   return d;
 }
 
 // ---- YAML builder ----
 function toYaml(id, d) {
-  var allFields = ['name','price_man','area_m2','age_years','floor_level','total_floors','direction','walk_to_station','station_name','address','lat','lng','supermarket_dist_m','hospital_dist_m','convenience_store_dist_m','source_url'].concat(boolFields).concat(['memo']);
+  var allFields = ['name','price_man','monthly_fee_man','area_m2','age_years','floor_level','total_floors','direction','walk_to_station','station_name','address','lat','lng','supermarket_dist_m','hospital_dist_m','convenience_store_dist_m','park_dist_m','school_dist_m','hazard_risk','source_url'].concat(boolFields).concat(['memo']);
   var lines = ['id: ' + id];
   allFields.forEach(function(k) {
     var v = d[k];
@@ -472,6 +480,8 @@ var OVERPASS_QUERIES = {
   supermarket_dist_m:        '["shop"~"supermarket|grocery"]',
   hospital_dist_m:           '["amenity"~"hospital|clinic"]',
   convenience_store_dist_m:  '["shop"="convenience"]',
+  park_dist_m:               '["leisure"="park"]',
+  school_dist_m:             '["amenity"~"school|kindergarten"]',
 };
 
 function haversineM(lat1, lng1, lat2, lng2) {
@@ -510,7 +520,7 @@ async function fetchAllDistances(lat, lng) {
     }
   }
   // 画面に反映
-  var labels = { supermarket_dist_m: 'スーパー', hospital_dist_m: '病院', convenience_store_dist_m: 'コンビニ' };
+  var labels = { supermarket_dist_m: 'スーパー', hospital_dist_m: '病院', convenience_store_dist_m: 'コンビニ', park_dist_m: '公園', school_dist_m: '学校' };
   var parts = keys.map(function(k) {
     return labels[k] + ': ' + (results[k] != null ? results[k] + 'm' : '不明');
   });

@@ -118,6 +118,10 @@ table.rank tr:hover td{background:#f9fafb;}
   <div class="sec-hdr" data-sec="sec-age">築年数ステップスコア <span class="arr">▶</span></div>
   <div class="sec-body closed" id="sec-age"></div>
 
+  <!-- ハザードリスクステップ -->
+  <div class="sec-hdr" data-sec="sec-hazard">ハザードリスクステップスコア <span class="arr">▶</span></div>
+  <div class="sec-body closed" id="sec-hazard"></div>
+
   <!-- 方角スコア -->
   <div class="sec-hdr" data-sec="sec-dir">方角スコア <span class="arr">▶</span></div>
   <div class="sec-body closed" id="sec-dir"></div>
@@ -158,25 +162,32 @@ table.rank tr:hover td{background:#f9fafb;}
 <script>
 // ===== INJECTED DATA =====
 var PROPERTIES = /* __PROPERTIES__ */[{"id": "5pa55Y2X", "name": "方南町サーラ", "price_man": 2690, "area_m2": 38.34, "age_years": 53, "floor_level": 8, "total_floors": 13, "direction": "南東", "walk_to_station": 3, "station_name": "方南町", "address": "東京都杉並区和泉4", "lat": null, "lng": null, "source_url": null, "pet_allowed": true, "renovation": true, "delivery_box": false, "bathroom_dryer": true, "walk_in_closet": false, "auto_lock": true, "parking": false, "bike_parking": true, "floor_heating": false, "system_kitchen": true, "dishwasher": false, "monitor_intercom": true, "security_camera": true, "new_earthquake_standard": false, "corner_unit": false, "top_floor": false, "memo": null}, {"id": "sample_001", "name": "サンプルマンション301", "source_url": "https://suumo.jp/ms/chuko/tokyo/...", "price_man": 5800, "area_m2": 65.5, "age_years": 12, "floor_level": 8, "total_floors": 14, "direction": "南", "walk_to_station": 7, "station_name": "渋谷", "address": "東京都渋谷区...", "lat": 35.658, "lng": 139.7016, "supermarket_dist_m": null, "hospital_dist_m": null, "convenience_store_dist_m": null, "theoretical_price_man": null, "pet_allowed": true, "renovation": false, "delivery_box": true, "bathroom_dryer": true, "walk_in_closet": false, "auto_lock": true, "parking": false, "bike_parking": true, "floor_heating": false, "system_kitchen": true, "dishwasher": false, "monitor_intercom": true, "security_camera": true, "new_earthquake_standard": true, "corner_unit": false, "top_floor": false, "memo": ""}];
-var GENERATED  = /* __GENERATED__ */"2026-06-08 10:29:17";
+var GENERATED  = /* __GENERATED__ */"2026-06-09 10:36:02";
 
 // ===== DEFAULT CONFIG =====
 var DEFAULT_CONFIG = {
   pet_filter: true,
   weights: {
-    area_m2:                  0.35,
+    area_m2:                  0.30,
     walk_to_station:          0.10,
     terminal_access:          0.10,
-    supermarket_dist_m:       0.135,
-    hospital_dist_m:          0.085,
-    convenience_store_dist_m: 0.05,
-    age_years:                0.08,
-    floor_level:              0.05,
-    direction:                0.05,
-    renovation:               0.05,
-    delivery_box:             0.03,
-    bathroom_dryer:           0.02,
-    walk_in_closet:           0.02
+    supermarket_dist_m:       0.10,
+    hospital_dist_m:          0.07,
+    convenience_store_dist_m: 0.04,
+    park_dist_m:              0.03,
+    school_dist_m:            0.03,
+    age_years:                0.07,
+    floor_level:              0.04,
+    direction:                0.04,
+    monthly_fee_man:          0.05,
+    hazard_risk:              0.05,
+    renovation:               0.04,
+    auto_lock:                0.03,
+    elevator:                 0.02,
+    bike_parking:             0.01,
+    delivery_box:             0.02,
+    bathroom_dryer:           0.015,
+    walk_in_closet:           0.015
   },
   normalization: {
     walk_to_station:          {min:1,    max:15,    invert:true},
@@ -184,7 +195,10 @@ var DEFAULT_CONFIG = {
     supermarket_dist_m:       {min:50,   max:1000,  invert:true},
     hospital_dist_m:          {min:50,   max:2000,  invert:true},
     convenience_store_dist_m: {min:50,   max:500,   invert:true},
-    terminal_access:          {min:1000, max:15000, invert:true}
+    park_dist_m:              {min:50,   max:800,   invert:true},
+    school_dist_m:            {min:50,   max:1000,  invert:true},
+    terminal_access:          {min:1000, max:15000, invert:true},
+    monthly_fee_man:          {min:1,    max:10,    invert:true}
   },
   area_steps: [
     {max:30, score:0.00},{max:35, score:0.10},{max:40, score:0.35},
@@ -193,6 +207,9 @@ var DEFAULT_CONFIG = {
   age_steps: [
     {max:10, score:1.00},{max:20, score:0.75},{max:30, score:0.50},
     {max:44, score:0.25},{max:999,score:0.00}
+  ],
+  hazard_steps: [
+    {max:0, score:1.00},{max:1, score:0.70},{max:2, score:0.40},{max:5, score:0.00}
   ],
   direction_scores: {
     '南':1.0,'南東':0.9,'南西':0.9,'東':0.7,'西':0.6,'北東':0.4,'北西':0.4,'北':0.3
@@ -207,18 +224,24 @@ var DEFAULT_CONFIG = {
 var WEIGHT_LABELS = {
   area_m2:'面積', walk_to_station:'駅徒歩', terminal_access:'ターミナル駅',
   supermarket_dist_m:'スーパー', hospital_dist_m:'病院',
-  convenience_store_dist_m:'コンビニ', age_years:'築年数', floor_level:'階数',
-  direction:'方角', renovation:'リノベ', delivery_box:'宅配ボックス',
+  convenience_store_dist_m:'コンビニ', park_dist_m:'公園', school_dist_m:'学校',
+  age_years:'築年数', floor_level:'階数', direction:'方角',
+  monthly_fee_man:'管理費+修繕積立', hazard_risk:'ハザードリスク',
+  renovation:'リノベ', auto_lock:'オートロック', elevator:'EV',
+  bike_parking:'駐輪場', delivery_box:'宅配ボックス',
   bathroom_dryer:'浴室乾燥機', walk_in_closet:'WIC'
 };
 
 var NORM_META = {
-  walk_to_station:          {label:'駅徒歩（分）',          hint:'小さいほど高得点'},
-  floor_level:              {label:'階数',                  hint:'大きいほど高得点'},
-  supermarket_dist_m:       {label:'スーパー（m）',         hint:'小さいほど高得点'},
-  hospital_dist_m:          {label:'病院（m）',             hint:'小さいほど高得点'},
-  convenience_store_dist_m: {label:'コンビニ（m）',         hint:'小さいほど高得点'},
-  terminal_access:          {label:'ターミナル駅距離（m）', hint:'小さいほど高得点'}
+  walk_to_station:          {label:'駅徒歩（分）',             hint:'小さいほど高得点'},
+  floor_level:              {label:'階数',                     hint:'大きいほど高得点'},
+  supermarket_dist_m:       {label:'スーパー（m）',            hint:'小さいほど高得点'},
+  hospital_dist_m:          {label:'病院（m）',                hint:'小さいほど高得点'},
+  convenience_store_dist_m: {label:'コンビニ（m）',            hint:'小さいほど高得点'},
+  park_dist_m:              {label:'公園（m）',                hint:'小さいほど高得点'},
+  school_dist_m:            {label:'学校（m）',                hint:'小さいほど高得点'},
+  terminal_access:          {label:'ターミナル駅距離（m）',    hint:'小さいほど高得点'},
+  monthly_fee_man:          {label:'管理費+修繕積立（万円/月）', hint:'小さいほど高得点'}
 };
 
 var DIRS = ['南','南東','南西','東','西','北東','北西','北'];
@@ -280,11 +303,15 @@ function scoreProp(prop,cfg){
   sc.supermarket_dist_m=n('supermarket_dist_m');
   sc.hospital_dist_m=n('hospital_dist_m');
   sc.convenience_store_dist_m=n('convenience_store_dist_m');
+  sc.park_dist_m=n('park_dist_m');
+  sc.school_dist_m=n('school_dist_m');
+  sc.monthly_fee_man=n('monthly_fee_man');
   sc.area_m2=prop.area_m2!=null?stepScore(parseFloat(prop.area_m2),cfg.area_steps):null;
   sc.age_years=prop.age_years!=null?stepScore(parseFloat(prop.age_years),cfg.age_steps):null;
+  sc.hazard_risk=prop.hazard_risk!=null?stepScore(parseFloat(prop.hazard_risk),cfg.hazard_steps):null;
   sc.terminal_access=termScore(prop,cfg);
   sc.direction=prop.direction!=null?(cfg.direction_scores[prop.direction]!=null?cfg.direction_scores[prop.direction]:null):null;
-  ['renovation','delivery_box','bathroom_dryer','walk_in_closet'].forEach(function(k){
+  ['renovation','delivery_box','bathroom_dryer','walk_in_closet','auto_lock','elevator','bike_parking'].forEach(function(k){
     var v=prop[k]; sc[k]=v===true?1.0:v===false?0.0:null;
   });
 
@@ -368,8 +395,8 @@ function buildNorm(cfg){
 
 function buildStepTable(type,cfg){
   var secId='sec-'+type;
-  var steps=type==='area'?cfg.area_steps:cfg.age_steps;
-  var col=type==='area'?'上限（㎡）':'上限（年）';
+  var steps=type==='area'?cfg.area_steps:type==='age'?cfg.age_steps:cfg.hazard_steps;
+  var col=type==='area'?'上限（㎡）':type==='age'?'上限（年）':'上限（リスク値）';
   var c=document.getElementById(secId);
   c.innerHTML='';
   var tbl=document.createElement('table');
@@ -453,6 +480,7 @@ function buildUI(cfg){
   buildNorm(cfg);
   buildStepTable('area',cfg);
   buildStepTable('age',cfg);
+  buildStepTable('hazard',cfg);
   buildDirGrid(cfg);
   buildTermTable(cfg);
 }
@@ -491,6 +519,7 @@ function readCfg(){
   }
   cfg.area_steps=readSteps('area');
   cfg.age_steps=readSteps('age');
+  cfg.hazard_steps=readSteps('hazard');
 
   cfg.direction_scores={};
   document.querySelectorAll('#sec-dir input[data-dir]').forEach(function(inp){

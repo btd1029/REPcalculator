@@ -12,19 +12,26 @@ hard_filters:
 
 weights:
   # 合計が1.0でなくても自動正規化される
-  area_m2: 0.35
+  area_m2: 0.30
   walk_to_station: 0.10
   terminal_access: 0.10        # ターミナル駅への直線距離平均
-  supermarket_dist_m: 0.135
-  hospital_dist_m: 0.085
-  convenience_store_dist_m: 0.05
-  age_years: 0.08
-  floor_level: 0.05
-  direction: 0.05
-  renovation: 0.05             # リノベ済み（boolean）
-  delivery_box: 0.03           # 宅配ボックス（boolean）
-  bathroom_dryer: 0.02         # 浴室乾燥機（boolean）
-  walk_in_closet: 0.02         # ウォークインクローゼット（boolean）
+  supermarket_dist_m: 0.10
+  hospital_dist_m: 0.07
+  convenience_store_dist_m: 0.04
+  park_dist_m: 0.03
+  school_dist_m: 0.03
+  age_years: 0.07
+  floor_level: 0.04
+  direction: 0.04
+  monthly_fee_man: 0.05        # 管理費+修繕積立金合計（万円/月）
+  hazard_risk: 0.05            # ハザードリスク（0〜5）
+  renovation: 0.04             # リノベ済み（boolean）
+  auto_lock: 0.03              # オートロック（boolean）
+  elevator: 0.02               # エレベーター（boolean）
+  bike_parking: 0.01           # 駐輪場（boolean）
+  delivery_box: 0.02           # 宅配ボックス（boolean）
+  bathroom_dryer: 0.015        # 浴室乾燥機（boolean）
+  walk_in_closet: 0.015        # ウォークインクローゼット（boolean）
 
 normalization:
   walk_to_station:      {min: 1,    max: 15}
@@ -33,7 +40,17 @@ normalization:
   supermarket_dist_m:   {min: 50,   max: 1000}
   hospital_dist_m:      {min: 50,   max: 2000}
   convenience_store_dist_m: {min: 50, max: 500}
+  park_dist_m:          {min: 50,   max: 800}
+  school_dist_m:        {min: 50,   max: 1000}
   terminal_access:      {min: 1000, max: 15000}  # 直線距離（m）
+  monthly_fee_man:      {min: 1,    max: 10}     # 万円/月
+
+# ハザードリスクステップスコア（0=安全〜5=高リスク）
+hazard_step_scores:
+  - {max_risk: 0, score: 1.00}   # リスクなし
+  - {max_risk: 1, score: 0.70}   # 低リスク
+  - {max_risk: 2, score: 0.40}   # 中リスク
+  - {max_risk: 5, score: 0.00}   # 高リスク
 
 # 築年数ステップスコア（線形正規化ではなく段階評価）
 age_step_scores:
