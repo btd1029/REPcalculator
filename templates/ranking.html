@@ -247,7 +247,7 @@ var NORM_META = {
 var DIRS = ['南','南東','南西','東','西','北東','北西','北'];
 
 // ===== CONFIG PERSISTENCE =====
-var LS_KEY = 'rep-config-v2';
+var LS_KEY = 'rep-config-v3';
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
 
@@ -308,7 +308,7 @@ function scoreProp(prop,cfg){
   sc.monthly_fee_man=n('monthly_fee_man');
   sc.area_m2=prop.area_m2!=null?stepScore(parseFloat(prop.area_m2),cfg.area_steps):null;
   sc.age_years=prop.age_years!=null?stepScore(parseFloat(prop.age_years),cfg.age_steps):null;
-  sc.hazard_risk=prop.hazard_risk!=null?stepScore(parseFloat(prop.hazard_risk),cfg.hazard_steps):null;
+  sc.hazard_risk=prop.hazard_risk!=null&&cfg.hazard_steps&&cfg.hazard_steps.length?stepScore(parseFloat(prop.hazard_risk),cfg.hazard_steps):null;
   sc.terminal_access=termScore(prop,cfg);
   sc.direction=prop.direction!=null?(cfg.direction_scores[prop.direction]!=null?cfg.direction_scores[prop.direction]:null):null;
   ['renovation','delivery_box','bathroom_dryer','walk_in_closet','auto_lock','elevator','bike_parking'].forEach(function(k){
@@ -520,6 +520,7 @@ function readCfg(){
   cfg.area_steps=readSteps('area');
   cfg.age_steps=readSteps('age');
   cfg.hazard_steps=readSteps('hazard');
+  if(!cfg.hazard_steps.length) cfg.hazard_steps=clone(DEFAULT_CONFIG.hazard_steps);
 
   cfg.direction_scores={};
   document.querySelectorAll('#sec-dir input[data-dir]').forEach(function(inp){
