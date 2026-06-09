@@ -294,7 +294,7 @@ document.getElementById('btn-extract').addEventListener('click', async function(
               : { type: 'image',    source: { type: 'base64', media_type: currentMime,        data: currentBase64 } },
             {
               type: 'text',
-              text: '以下のSUUMO物件情報（スクリーンショットまたはPDF）から情報をJSONで抽出してください。\n不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。\nmonthly_fee_manは管理費と修繕積立金の合計（万円/月、数値）。\n\n{"name":"物件名","price_man":数値,"monthly_fee_man":数値,"area_m2":数値,"age_years":数値,"floor_level":数値,"total_floors":数値,"direction":"南/南東/南西/東/西/北東/北西/北","walk_to_station":数値,"station_name":"駅名","address":"住所","source_url":null,"pet_allowed":bool,"renovation":bool,"delivery_box":bool,"bathroom_dryer":bool,"walk_in_closet":bool,"auto_lock":bool,"elevator":bool,"parking":bool,"bike_parking":bool,"floor_heating":bool,"system_kitchen":bool,"dishwasher":bool,"monitor_intercom":bool,"security_camera":bool,"new_earthquake_standard":bool,"corner_unit":bool,"top_floor":bool}\n\nJSONのみ返してください。'
+              text: '以下のSUUMO物件情報（スクリーンショットまたはPDF）から情報をJSONで抽出してください。\n不明な項目はnullにしてください。boolean項目は記載があればtrue、なければfalse。\nmonthly_fee_manは管理費と修繕積立金の合計（万円/月、数値）。\nmemoには以下を日本語50字以内で簡潔にまとめてください：①一般的でない珍しい設備・特徴、②欠陥・デメリット（旧耐震・修繕積立金不足・訳あり等）、③その他の特記事項。特記事項がなければnull。\n\n{"name":"物件名","price_man":数値,"monthly_fee_man":数値,"area_m2":数値,"age_years":数値,"floor_level":数値,"total_floors":数値,"direction":"南/南東/南西/東/西/北東/北西/北","walk_to_station":数値,"station_name":"駅名","address":"住所","source_url":null,"memo":"特記事項","pet_allowed":bool,"renovation":bool,"delivery_box":bool,"bathroom_dryer":bool,"walk_in_closet":bool,"auto_lock":bool,"elevator":bool,"parking":bool,"bike_parking":bool,"floor_heating":bool,"system_kitchen":bool,"dishwasher":bool,"monitor_intercom":bool,"security_camera":bool,"new_earthquake_standard":bool,"corner_unit":bool,"top_floor":bool}\n\nJSONのみ返してください。'
             }
           ]
         }]
@@ -334,6 +334,7 @@ function populateForm(d) {
   if (dir && d.direction) dir.value = d.direction;
   boolFields.forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.checked = !!d[k]; });
   ['lat','lng'].forEach(function(k) { var el = document.getElementById('f-'+k); if (el) el.value = d[k] != null ? d[k] : ''; });
+  var memo = document.getElementById('f-memo'); if (memo) memo.value = d.memo != null ? d.memo : '';
   // 住所があり緯度経度が未設定なら自動ジオコーディング
   if (d.address && !d.lat && !d.lng) {
     var status = document.getElementById('geocode-status');
