@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 12px; font-size: 13px; }
+    textarea { width: 100%; height: 260px; box-sizing: border-box; font-family: monospace; font-size: 12px; }
+    button { padding: 8px 16px; margin-top: 8px; cursor: pointer; }
+    #run { background: #1a73e8; color: #fff; border: none; border-radius: 4px; }
+    #status { margin-top: 10px; white-space: pre-wrap; }
+    .warn { color: #b06000; }
+    .err { color: #c5221f; }
+    .ok { color: #188038; }
+    #confirmBox { display: none; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <p>Gem出力の <code>&lt;PIA_JSON&gt;…&lt;/PIA_JSON&gt;</code> の中身（JSON）を貼り付けてください。</p>
+  <textarea id="json" placeholder='{ "meta": { ... }, "fields": { ... }, ... }'></textarea>
+  <div>
+    <button id="run" onclick="run(false)">転記</button>
+    <span id="status"></span>
+  </div>
+  <div id="confirmBox">
+    <button onclick="run(true)">⚠ 警告を無視して転記</button>
+    <button onclick="google.script.host.close()">中止</button>
+  </div>
+
+  <script>
+    function run(ignoreWarnings) {
+      var txt = document.getElementById('json').value.trim();
+      // <PIA_JSON> タグごと貼られても許容
+      txt = txt.replace(/^<PIA_JSON>/, '').replace(/<\/PIA_JSON>$/, '').trim();
+      if (!txt) { setStatus('JSONを貼ってください', 'err'); return; }
+      setStatus('転記中…', '');
+      document.getElementById('confirmBox').style.display = 'none';
+      google.script.run
+        .withSuccessHandler(function(res){ onResult(res, ignoreWarnings); })
+        .withFailureHandler(function(e){ setStatus('エラー: ' + e.message, 'err'); })
+        .transcribe(txt);
+    }
+    function onResult(res, ignoreWarnings) {
+      if (res.hard) { setStatus('✖ 中止（ハードエラー）\n- ' + res.messages.join('\n- '), 'err'); return; }
+      if (res.ok) {
+        var cls = res.messages[0].indexOf('警告あり') >= 0 ? 'warn' : 'ok';
+        var link = res.url ? ('\n\n生成: ' + res.name + '\n' + res.url) : '';
+        setStatus(res.messages.join('\n') + link, cls);
+        return;
+      }
+      // ソフト警告で確認待ち（transcribeはハードのみ中止するので通常ここには来ないが保険）
+      setStatus(res.messages.join('\n'), 'warn');
+      document.getElementById('confirmBox').style.display = 'block';
+    }
+    function setStatus(msg, cls) {
+      var s = document.getElementById('status');
+      s.textContent = msg; s.className = cls || '';
+    }
+  </script>
+</body>
+</html>
